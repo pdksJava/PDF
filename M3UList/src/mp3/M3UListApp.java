@@ -112,9 +112,10 @@ public class M3UListApp {
 										int oncekiYarimFark = -1;
 										int siraFark = orjFak;
 										if (siralar.size() > 1) {
-											Double bolum = (double) listOrj.size() / (2 * siralar.size());
+											Double bolum = (double) listOrj.size() / (siralar.size());
 											if (bolum > orjFak) {
 												siraFark = (int) Math.sqrt(bolum);
+												// siraFark = (int) (bolum * 0.5d);
 											}
 											if (islemAdet < 2)
 												System.out.println(key + " " + siralar.size() + " : " + siraFark);
