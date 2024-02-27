@@ -93,43 +93,45 @@ public class M3UListApp {
 						boolean devam = true;
 						int islemAdet = 0;
 						while (devam) {
-							map.clear();
-							solistMap.clear();
-							int sira = 0;
-							maxAdet = 0;
 							++islemAdet;
-							System.out.println("Ýþlem Adet : " + islemAdet + " " + new Date() + "\n");
+							boolean degisti = false, farkVar = false;
+							try {
+								map.clear();
+								solistMap.clear();
+								int sira = 0;
+								maxAdet = 0;
 
-							for (Liste liste : listOrj) {
-								liste.setNumValue(sira);
-								String line = (String) liste.getId();
-								String str = line.substring(line.indexOf(",") + 1);
-								int endIndex = str.indexOf("-");
-								if (endIndex > 0) {
-									String solist = str.substring(0, endIndex).trim();
-									solistMap.put(sira, solist);
-									List<Integer> siralar = map.containsKey(solist) ? map.get(solist) : new ArrayList<Integer>();
-									if (siralar.isEmpty())
-										map.put(solist, siralar);
-									siralar.add(sira);
+								System.out.println("Ýþlem Adet : " + islemAdet + " " + new Date() + "\n");
 
-									if (siralar.size() > maxAdet)
-										maxAdet = siralar.size();
+								for (Liste liste : listOrj) {
+									liste.setNumValue(sira);
+									String line = (String) liste.getId();
+									String str = line.substring(line.indexOf(",") + 1);
+									int endIndex = str.indexOf("-");
+									if (endIndex > 0) {
+										String solist = str.substring(0, endIndex).trim();
+										solistMap.put(sira, solist);
+										List<Integer> siralar = map.containsKey(solist) ? map.get(solist) : new ArrayList<Integer>();
+										if (siralar.isEmpty())
+											map.put(solist, siralar);
+										siralar.add(sira);
+
+										if (siralar.size() > maxAdet)
+											maxAdet = siralar.size();
+									}
+
+									++sira;
 								}
 
-								++sira;
-							}
-							boolean degisti = false, farkVar = false;
-							int solistKok2 = (int) Math.sqrt((double) map.size()), parcaKok2 = (int) Math.sqrt((double) listOrj.size());
-							if (orjFak <= 0) {
-								if (orjFak < solistKok2)
-									orjFak = solistKok2;
-								if (orjFak < parcaKok2)
-									orjFak = parcaKok2;
+								int solistKok2 = (int) Math.sqrt((double) map.size()), parcaKok2 = (int) Math.sqrt((double) listOrj.size());
+								if (orjFak <= 0) {
+									if (orjFak < solistKok2)
+										orjFak = solistKok2;
+									if (orjFak < parcaKok2)
+										orjFak = parcaKok2;
 
-							}
+								}
 
-							try {
 								int toplamSarkiAdet = listOrj.size();
 								for (String key : map.keySet()) {
 									List<Integer> solistSarkiSirasi = map.get(key);
@@ -146,13 +148,11 @@ public class M3UListApp {
 
 										if (islemAdet < 2)
 											System.out.println(islemAdet + ". " + key + " " + solistSarkiSirasi.toString() + " : " + siraFark);
-
 										for (int i = 1; i < solistSarkiAdet; i++) {
 											int simdikiSira = solistSarkiSirasi.get(i), oncekiSira = solistSarkiSirasi.get(i - 1);
 											int fark = (simdikiSira - oncekiSira);
 											boolean yenidenSirala = false;
 											if (fark < siraFark) {
-
 												int indis = i;
 												if (siraFark < oncekiYarimFark) {
 													simdikiSira = oncekiSira;
@@ -223,16 +223,29 @@ public class M3UListApp {
 
 														}
 
-													} else
+													} else {
 														farkVar = true;
+													}
+
 												}
 												if (yenidenSirala) {
 													degisti = true;
+													for (int j = 0; j < solistSarkiSirasi.size() - 1; j++) {
+														for (int k = j + 1; k < solistSarkiSirasi.size(); k++) {
+															int deger1 = solistSarkiSirasi.get(j), deger2 = solistSarkiSirasi.get(k);
+															if (deger1 > deger2) {
+																solistSarkiSirasi.set(j, deger2);
+																solistSarkiSirasi.set(k, deger1);
+															}
+														}
+													}
+
 												}
 												oncekiYarimFark = (solistSarkiSirasi.get(i) - solistSarkiSirasi.get(i - 1)) / 2;
 											} else
 												oncekiYarimFark = (simdikiSira - oncekiSira) / 2;
-											oncekiYarimFark += islemAdet;
+											// if (islemAdet < fark * 2)
+											oncekiYarimFark += (islemAdet % 2 == 0 ? 1 : 2);
 										}
 										if (guncellendi)
 											System.out.println(islemAdet + ". " + key + " " + solistSarkiSirasi.toString() + " : " + siraFark);
@@ -246,9 +259,9 @@ public class M3UListApp {
 									devam = false;
 							} catch (Exception e2) {
 								e2.printStackTrace();
-								System.out.println("Ýþlem Adet : " + islemAdet + " " + new Date() + "\n");
+								System.err.println("Ýþlem Adet : " + islemAdet + " " + new Date() + "\n" + e2);
 							}
-							if (degisti == false) {
+							if (degisti == false || farkVar || islemAdet > 50) {
 								StringBuffer sb = new StringBuffer();
 								List<String> strList = new ArrayList<String>();
 								sb.append(ilkSatir + "\n");
