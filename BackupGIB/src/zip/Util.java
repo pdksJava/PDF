@@ -12,6 +12,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -27,6 +29,90 @@ import com.google.gson.JsonParser;
 public class Util {
 
 	public static final Locale TR_LOCALE = new Locale("tr", "TR");
+	
+	/**
+	 * @param klasor
+	 * @param dosyalar
+	 */
+	public static void dosyaEkle(File klasor, List<File> dosyalar) {
+		if (klasor != null && klasor.isDirectory()) {
+			File[] files = klasor.listFiles();
+			for (int i = 0; i < files.length; i++) {
+				File file = files[i];
+				if (file.isDirectory()) {
+					dosyaEkle(file, dosyalar);
+				} else {
+					String fileName = file.getName();
+					int lastIndex = fileName.lastIndexOf(".");
+					if (lastIndex > 0) {
+						String extName = file.getName().substring(lastIndex + 1);
+						if (extName.equalsIgnoreCase("zip") && fileName.indexOf("-DR-") < 0) {
+							dosyalar.add(file);
+						}
+					}
+
+				}
+			}
+		}
+	}
+	/**
+	 * @param dosyaPath
+	 * @param backDosyaPath
+	 * @param klasorler
+	 * @return
+	 */
+	public static int dosyaKopyala(String dosyaPath,String backDosyaPath ,List<File> klasorler) {
+		int adet=0;
+
+		if (!dosyaPath.equalsIgnoreCase(backDosyaPath)) {
+
+			File file = new File(backDosyaPath);
+			if (file.exists() == false)
+				file.mkdirs();
+			for (File zipFile : klasorler) {
+				String dosyaAdi = Util.replaceAllManuel(zipFile.getPath(), dosyaPath, backDosyaPath);
+				String yeniPath = Util.replaceAllManuel(zipFile.getParent(), dosyaPath, backDosyaPath);
+				File fileYedek = new File(yeniPath);
+				if (!fileYedek.exists())
+					file.mkdirs();
+
+				try {
+					File fileNew = new File(dosyaAdi);
+					if (fileNew.exists() == false || zipFile.lastModified() != fileNew.lastModified()) {
+						Files.copy(zipFile.toPath(), fileNew.toPath(), StandardCopyOption.REPLACE_EXISTING);
+						++adet;
+					}
+
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+
+			}
+		}
+		return adet;
+	}
+
+	/**
+	 * @param inputFile
+	 * @param list
+	 * @param yil
+	 */
+	public static void dosyaBul(File inputFile, List<File> list, String yil) {
+		if (inputFile != null && inputFile.isDirectory()) {
+			File[] files = inputFile.listFiles();
+			for (int i = 0; i < files.length; i++) {
+				File file = files[i];
+				if (file.isDirectory()) {
+					if (file.getName().endsWith(yil)) {
+						list.add(file);
+
+					} else
+						dosyaBul(file, list, yil);
+				}
+			}
+		}
+
+	}
 
 	/**
 	 * @param jsonString

@@ -6,9 +6,6 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
@@ -207,8 +204,6 @@ public class Sakla {
 
 				if (!anaDosya.getPath().equalsIgnoreCase(yedekDosya.getPath())) {
 					List<File> klasorler = new ArrayList<>(), dosyalar = null;
-					dosyaBul(anaDosya, klasorler, "." + spinYil.getValue());
-					int adet = 0;
 					LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
 					map.put("anaKlasor", anaDosya.getPath());
 					map.put("yedekKlasor", yedekDosya.getPath());
@@ -220,42 +215,15 @@ public class Sakla {
 					} catch (Exception e2) {
 						e2.printStackTrace();
 					}
-
+					Util.dosyaBul(anaDosya, klasorler, "." + spinYil.getValue());
+					int adet = 0;
 					if (!klasorler.isEmpty()) {
 						dosyalar = new ArrayList<>();
-						for (File klasor : klasorler) {
-							dosyaEkle(klasor, dosyalar);
-						}
+						for (File klasor : klasorler)
+							Util.dosyaEkle(klasor, dosyalar);
+						if (!dosyalar.isEmpty())
+							adet = Util.dosyaKopyala(anaDosya.getPath(), yedekDosya.getPath(), dosyalar);
 
-						if (!dosyalar.isEmpty()) {
-							String dosyaPath = anaDosya.getPath();
-							String backDosyaPath = yedekDosya.getPath();
-							if (!dosyaPath.equalsIgnoreCase(backDosyaPath)) {
-
-								File file = new File(backDosyaPath);
-								if (file.exists() == false)
-									file.mkdirs();
-								for (File zipFile : dosyalar) {
-									String dosyaAdi = Util.replaceAllManuel(zipFile.getPath(), dosyaPath, backDosyaPath);
-									String yeniPath = Util.replaceAllManuel(zipFile.getParent(), dosyaPath, backDosyaPath);
-									File fileYedek = new File(yeniPath);
-									if (!fileYedek.exists())
-										file.mkdirs();
-
-									try {
-										File fileNew = new File(dosyaAdi);
-										if (fileNew.exists() == false || zipFile.lastModified() != fileNew.lastModified()) {
-											Files.copy(zipFile.toPath(), fileNew.toPath(), StandardCopyOption.REPLACE_EXISTING);
-											++adet;
-										}
-
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-
-								}
-							}
-						}
 					}
 					if (dosyalar == null || dosyalar.isEmpty()) {
 						JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait dosya bulunmadý!");
@@ -307,51 +275,4 @@ public class Sakla {
 		});
 	}
 
-	/**
-	 * @param klasor
-	 * @param dosyalar
-	 */
-	private static void dosyaEkle(File klasor, List<File> dosyalar) {
-		if (klasor != null && klasor.isDirectory()) {
-			File[] files = klasor.listFiles();
-			for (int i = 0; i < files.length; i++) {
-				File file = files[i];
-				if (file.isDirectory()) {
-					dosyaEkle(file, dosyalar);
-				} else {
-					String fileName = file.getName();
-					int lastIndex = fileName.lastIndexOf(".");
-					if (lastIndex > 0) {
-						String extName = file.getName().substring(lastIndex + 1);
-						if (extName.equalsIgnoreCase("zip") && fileName.indexOf("-DR-") < 0) {
-							dosyalar.add(file);
-						}
-					}
-
-				}
-			}
-		}
-	}
-
-	/**
-	 * @param inputFile
-	 * @param list
-	 * @param yil
-	 */
-	private static void dosyaBul(File inputFile, List<File> list, String yil) {
-		if (inputFile != null && inputFile.isDirectory()) {
-			File[] files = inputFile.listFiles();
-			for (int i = 0; i < files.length; i++) {
-				File file = files[i];
-				if (file.isDirectory()) {
-					if (file.getName().endsWith(yil)) {
-						list.add(file);
-
-					} else
-						dosyaBul(file, list, yil);
-				}
-			}
-		}
-
-	}
 }
