@@ -27,8 +27,8 @@ import org.json.JSONObject;
 
 import com.google.gson.Gson;
 
-public class Sakla {
-
+public class BackUpZip {
+	static int baslangicYil = 2010;
 	static File anaDosya = null, yedekDosya = null;
 	static File bilgiDosya = new File("/gib/saveCFG.json");
 
@@ -40,7 +40,7 @@ public class Sakla {
 		myFrame.setResizable(false);
 		JPanel yilPanel = new JPanel();
 		final JSpinner spinYil = new JSpinner();
-		SpinnerNumberModel model1 = new SpinnerNumberModel(2010, 2010, 9999, 1);
+		SpinnerNumberModel model1 = new SpinnerNumberModel(baslangicYil, baslangicYil, 9999, 1);
 		spinYil.setModel(model1);
 		JComponent editor = new JSpinner.NumberEditor(spinYil, "#");
 		spinYil.setEditor(editor);
