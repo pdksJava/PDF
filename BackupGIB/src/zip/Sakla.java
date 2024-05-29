@@ -252,7 +252,7 @@ public class Sakla {
 					if (dosyalar == null || dosyalar.isEmpty()) {
 						JOptionPane.showMessageDialog(null, textYil.getText() + " ait dosya bulunmadý!");
 					} else if (adet > 0)
-						JOptionPane.showMessageDialog(null, textYil.getText() + " ait " + dosyalar.size() + " adet dosya bulundu.");
+						JOptionPane.showMessageDialog(null, textYil.getText() + " ait " + adet + " adet dosya bulundu.");
 					else
 						JOptionPane.showMessageDialog(null, textYil.getText() + " ait yedeklenecek yeni dosya yoktur!");
 				} else
