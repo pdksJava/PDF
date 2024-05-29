@@ -216,21 +216,24 @@ public class BackUpZip {
 						e2.printStackTrace();
 					}
 					Util.dosyaBul(anaDosya, klasorler, "." + spinYil.getValue());
-					int adet = 0;
+
 					if (!klasorler.isEmpty()) {
+						int adet = 0;
 						dosyalar = new ArrayList<>();
 						for (File klasor : klasorler)
 							Util.dosyaEkle(klasor, dosyalar);
 						if (!dosyalar.isEmpty())
 							adet = Util.dosyaKopyala(anaDosya.getPath(), yedekDosya.getPath(), dosyalar);
-
+						if (dosyalar == null || dosyalar.isEmpty()) {
+							JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait dosya bulunmadý!");
+						} else if (adet > 0)
+							JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait " + adet + " adet dosya bulundu.");
+						else
+							JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait yedeklenecek yeni dosya yoktur!");
+					} else {
+						JOptionPane.showMessageDialog(null, spinYil.getValue() + "  yýlýna ait dönem dosyalarý bulunamadý!");
 					}
-					if (dosyalar == null || dosyalar.isEmpty()) {
-						JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait dosya bulunmadý!");
-					} else if (adet > 0)
-						JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait " + adet + " adet dosya bulundu.");
-					else
-						JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait yedeklenecek yeni dosya yoktur!");
+
 				} else
 					JOptionPane.showMessageDialog(null, "Yedek klasörünü farklý seçiniz!");
 			}
