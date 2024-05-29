@@ -46,7 +46,7 @@ public class JobGIB {
 								System.out.println(yil + " yýlýna ait kopyalanacak dosya bulunamadý!");
 							dosyalar = null;
 						} else
-							System.err.println((String) map.get("anaKlasor") + " dosyalar bulunamadý!");
+							System.err.println((String) map.get("anaKlasor") + " " + yil + " yýlýna dönem dosyalarý bulunamadý!");
 						klasorler = null;
 					} else {
 						if (!anaDosya.exists())
