@@ -22,7 +22,7 @@ public class JobGIB {
 							yil = deger;
 					} catch (Exception e) {
 					}
-				if (map.has("yil") && map.has("anaKlasor") && map.has("yedekKlasor")) {
+				if ((yil != null || map.has("yil")) && map.has("anaKlasor") && map.has("yedekKlasor")) {
 					if (yil == null)
 						yil = Integer.parseInt((String) map.get("yil"));
 					String klasorAdi = (String) map.get("anaKlasor");
@@ -53,9 +53,7 @@ public class JobGIB {
 							System.err.println((String) map.get("anaKlasor") + " bulunamadý!");
 						if (!yedekDosya.exists())
 							System.err.println((String) map.get("yedekKlasor") + " bulunamadý!");
-
 					}
-
 				}
 				map = null;
 			} catch (Exception e) {
