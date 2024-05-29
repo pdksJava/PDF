@@ -1,6 +1,7 @@
-package pdf;
+package zip;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -8,6 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -15,18 +19,35 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
-import com.lowagie.text.Document;
-import com.lowagie.text.PageSize;
-import com.lowagie.text.pdf.PdfContentByte;
-import com.lowagie.text.pdf.PdfImportedPage;
-import com.lowagie.text.pdf.PdfReader;
-import com.lowagie.text.pdf.PdfWriter;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class Util {
 
 	public static final Locale TR_LOCALE = new Locale("tr", "TR");
-	
 
+	/**
+	 * @param jsonString
+	 * @return
+	 */
+	public static String toPrettyFormat(String jsonString) {
+		String prettyJson = null;
+		try {
+			JsonParser parser = new JsonParser();
+			JsonObject json = parser.parse(jsonString).getAsJsonObject();
+			Gson gson = new GsonBuilder().setPrettyPrinting().create();
+			prettyJson = gson.toJson(json);
+			if (prettyJson.lastIndexOf("\\u0026") > 0)
+				prettyJson = replaceAllManuel(prettyJson, "\\u0026", "&");
+			if (prettyJson.lastIndexOf("\\u003d") > 0)
+				prettyJson = replaceAllManuel(prettyJson, "\\u003d", "=");
+		} catch (Exception e) {
+			prettyJson = jsonString;
+		}
+		return prettyJson;
+	}
 
 	/**
 	 * @param file
@@ -66,7 +87,7 @@ public class Util {
 		}
 		return list;
 	}
-	
+
 	/**
 	 * 
 	 * 
@@ -102,6 +123,71 @@ public class Util {
 		return file;
 	}
 
+	public static void fileWrite(String content, String fileName) throws Exception {
+ 		Writer printWriter = null;
+		FileOutputStream fos = null;
+		String dosyaAdi = fileName;
+		File file = new File(dosyaAdi);
+		if (!file.exists()) {
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+
+			}
+		}
+
+		try {
+			fos = new FileOutputStream(dosyaAdi, false);
+			printWriter = new BufferedWriter(new OutputStreamWriter(fos, StandardCharsets.UTF_8));
+			printWriter.write(content + "\n");
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		} finally {
+			if (printWriter != null) {
+				printWriter.flush();
+				printWriter.close();
+				// fos.flush();
+				// fos.close();
+			}
+		}
+
+	}
+
+	/**
+	 * @param str
+	 * @param pattern
+	 * @param replace
+	 * @return
+	 */
+	public static String replaceAllManuel(String str, String pattern, String replace) {
+		StringBuffer lSb = new StringBuffer();
+		if ((str != null) && (pattern != null) && (pattern.length() > 0) && (replace != null)) {
+			int i = 0;
+			int j = str.indexOf(pattern, i);
+			int l = pattern.length();
+			int m = str.length();
+			if (j > -1) {
+				while (j > -1) {
+					if (i != j) {
+						lSb.append(str.substring(i, j));
+					}
+					lSb.append(replace);
+					i = j + l;
+					j = (i > m) ? -1 : str.indexOf(pattern, i);
+				}
+				if (i < m) {
+					lSb.append(str.substring(i));
+				}
+			} else {
+				lSb.append(str);
+			}
+			str = lSb.toString();
+
+		}
+
+		return str;
+	}
+
 	/**
 	 * @param file
 	 * @return
@@ -131,42 +217,5 @@ public class Util {
 	 * @throws Exception
 	 */
 	public static void mergePdfFiles(List<InputStream> inputPdfList, OutputStream outputStream) throws Exception {
-		// Create document and pdfReader objects.
-		Document document = new Document();
-
-		// Create writer for the outputStream
-		PdfWriter writer = PdfWriter.getInstance(document, outputStream);
-
-		// Open document.
-		document.open();
-
-		// Contain the pdf data.
-		PdfContentByte pageContentByte = writer.getDirectContent();
-
-		for (InputStream inputStream : inputPdfList) {
-			PdfReader reader = new PdfReader(inputStream);
-			int numberOfPages = reader.getNumberOfPages();
-			for (int i = 1; i <= numberOfPages; i++) {
-				// import the page from source pdf
-				PdfImportedPage page = writer.getImportedPage(reader, i);
-				if (page.getWidth() > page.getHeight())
-					document.setPageSize(PageSize.A4.rotate());
-				else
-					document.setPageSize(PageSize.A4);
-
-				document.newPage();
-				// add the page to the destination pdf
-				pageContentByte.addTemplate(page, 0, 0);
-			}
-
-			reader.close();
-			// Create page and add content.
-
-		}
-
-		// Close document and outputStream.
-		outputStream.flush();
-		document.close();
-		outputStream.close();
 	}
 }
