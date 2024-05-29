@@ -16,18 +16,19 @@ import java.util.List;
 import java.util.Locale;
 
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
 
 import org.json.JSONObject;
 
 import com.google.gson.Gson;
-
- 
 
 public class Sakla {
 
@@ -41,7 +42,12 @@ public class Sakla {
 		final JFrame myFrame = new JFrame();
 		myFrame.setResizable(false);
 		JPanel yilPanel = new JPanel();
-
+		final JSpinner spinYil = new JSpinner();
+		SpinnerNumberModel model1 = new SpinnerNumberModel(2010, 2010, 9999, 1);
+		spinYil.setModel(model1);
+		JComponent editor = new JSpinner.NumberEditor(spinYil, "#");
+		spinYil.setEditor(editor);
+		((JSpinner.DefaultEditor) editor).getTextField().setEditable(false);
 		yilPanel.setBounds(0, 0, 340, 100);
 		yilPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
 		JPanel anaPanel = new JPanel();
@@ -64,10 +70,10 @@ public class Sakla {
 		final JLabel labelYil = new JLabel("Ýþlem Yýlý");
 		final JTextField textAna = new JTextField();
 		final JTextField textYedek = new JTextField();
-		final JTextField textYil = new JTextField();
-		textYil.setDocument(new JTextFieldLimit(4));
+
 		Calendar cal = Calendar.getInstance();
-		textYil.setText(String.valueOf(cal.get(Calendar.YEAR)));
+		spinYil.setValue(cal.get(Calendar.YEAR));
+		// textYil.setText(String.valueOf(cal.get(Calendar.YEAR)));
 		textAna.setEnabled(false);
 		textYedek.setEnabled(false);
 		final JButton btnAna = new JButton("Ana Klasör seç");
@@ -86,8 +92,10 @@ public class Sakla {
 
 		labelYil.setLocation(100, 100);
 		yilPanel.add(labelYil);
-		textYil.setLocation(200, 100);
-		yilPanel.add(textYil);
+		yilPanel.add(spinYil);
+
+		// textYil.setLocation(200, 100);
+		// yilPanel.add(textYil);
 
 		labelAna.setLocation(100, 300);
 		anaPanel.add(labelAna);
@@ -119,7 +127,7 @@ public class Sakla {
 				String jsonStr = new String(Util.getFileByteArray(bilgiDosya));
 				JSONObject map = new JSONObject(jsonStr);
 				if (map.has("yil"))
-					textYil.setText((String) map.get("yil"));
+					spinYil.setValue(Integer.parseInt((String) map.get("yil")));
 				if (map.has("anaKlasor")) {
 					String klasor = (String) map.get("anaKlasor");
 					File file = new File(klasor);
@@ -199,12 +207,12 @@ public class Sakla {
 
 				if (!anaDosya.getPath().equalsIgnoreCase(yedekDosya.getPath())) {
 					List<File> klasorler = new ArrayList<>(), dosyalar = null;
-					dosyaBul(anaDosya, klasorler, "." + textYil.getText());
+					dosyaBul(anaDosya, klasorler, "." + spinYil.getValue());
 					int adet = 0;
 					LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
 					map.put("anaKlasor", anaDosya.getPath());
 					map.put("yedekKlasor", yedekDosya.getPath());
-					map.put("yil", textYil.getText());
+					map.put("yil", String.valueOf(spinYil.getValue()));
 					Gson gs = new Gson();
 					String content = gs.toJson(map);
 					try {
@@ -250,13 +258,13 @@ public class Sakla {
 						}
 					}
 					if (dosyalar == null || dosyalar.isEmpty()) {
-						JOptionPane.showMessageDialog(null, textYil.getText() + " ait dosya bulunmadý!");
+						JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait dosya bulunmadý!");
 					} else if (adet > 0)
-						JOptionPane.showMessageDialog(null, textYil.getText() + " ait " + adet + " adet dosya bulundu.");
+						JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait " + adet + " adet dosya bulundu.");
 					else
-						JOptionPane.showMessageDialog(null, textYil.getText() + " ait yedeklenecek yeni dosya yoktur!");
+						JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait yedeklenecek yeni dosya yoktur!");
 				} else
-					JOptionPane.showMessageDialog(null, "Klasörler farklý seçiniz!");
+					JOptionPane.showMessageDialog(null, "Yedek klasörünü farklý seçiniz!");
 			}
 		});
 
@@ -273,7 +281,7 @@ public class Sakla {
 						textYedek.setText(yedekDosya.getAbsoluteFile().getPath());
 						textYedek.setToolTipText(textYedek.getText());
 						btnYedek.setVisible(true);
-						saveBtn.setVisible(anaDosya != null && anaDosya.exists() && textYil.getText() != null && textYil.getText().length() > 3);
+						saveBtn.setVisible(anaDosya != null && anaDosya.exists() && spinYil.getValue() != null);
 					}
 				}
 			}
@@ -292,7 +300,7 @@ public class Sakla {
 						textAna.setText(anaDosya.getAbsoluteFile().getPath());
 						textAna.setToolTipText(textAna.getText());
 						btnAna.setVisible(true);
-						saveBtn.setVisible(yedekDosya != null && yedekDosya.exists() && textYil.getText() != null && textYil.getText().length() > 3);
+						saveBtn.setVisible(yedekDosya != null && yedekDosya.exists() && spinYil.getValue() != null);
 					}
 				}
 			}
