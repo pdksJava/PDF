@@ -2,6 +2,7 @@ package zip;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.json.JSONObject;
@@ -31,7 +32,7 @@ public class JobGIB {
 					File yedekDosya = new File(klasorAdi);
 					String mesaj = zipGIBDosyaYedekle(yil, anaDosya, yedekDosya);
 					if (mesaj != null && mesaj.length() > 0)
-						System.out.println(mesaj);
+						System.out.println(mesaj + " " + Util.convertToDateString(new Date(), "yyyy-MM-dd HH:ss"));
 				}
 				map = null;
 
