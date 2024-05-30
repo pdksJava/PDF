@@ -6,10 +6,8 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Locale;
 
 import javax.swing.JButton;
@@ -201,9 +199,7 @@ public class BackUpZip {
 		saveBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-
 				if (!anaDosya.getPath().equalsIgnoreCase(yedekDosya.getPath())) {
-					List<File> klasorler = new ArrayList<>(), dosyalar = null;
 					LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
 					map.put("anaKlasor", anaDosya.getPath());
 					map.put("yedekKlasor", yedekDosya.getPath());
@@ -215,25 +211,9 @@ public class BackUpZip {
 					} catch (Exception e2) {
 						e2.printStackTrace();
 					}
-					Util.dosyaBul(anaDosya, klasorler, "." + spinYil.getValue());
-
-					if (!klasorler.isEmpty()) {
-						int adet = 0;
-						dosyalar = new ArrayList<>();
-						for (File klasor : klasorler)
-							Util.dosyaEkle(klasor, dosyalar);
-						if (!dosyalar.isEmpty())
-							adet = Util.dosyaKopyala(anaDosya.getPath(), yedekDosya.getPath(), dosyalar);
-						if (dosyalar == null || dosyalar.isEmpty()) {
-							JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait dosya bulunmadý!");
-						} else if (adet > 0)
-							JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait " + adet + " adet dosya bulundu.");
-						else
-							JOptionPane.showMessageDialog(null, spinYil.getValue() + " ait yedeklenecek yeni dosya yoktur!");
-					} else {
-						JOptionPane.showMessageDialog(null, spinYil.getValue() + "  yýlýna ait dönem dosyalarý bulunamadý!");
-					}
-
+					String mesaj = JobGIB.zipGIBDosyaYedekle((int) spinYil.getValue(), anaDosya, yedekDosya);
+					if (mesaj != null && mesaj.length() > 0)
+						JOptionPane.showMessageDialog(null, mesaj);
 				} else
 					JOptionPane.showMessageDialog(null, "Yedek klasörünü farklý seçiniz!");
 			}

@@ -29,38 +29,103 @@ public class JobGIB {
 					File anaDosya = new File(klasorAdi);
 					klasorAdi = (String) map.get("anaKlasor");
 					File yedekDosya = new File(klasorAdi);
-					if (anaDosya.exists() && yedekDosya.exists()) {
-						List<File> klasorler = new ArrayList<>(), dosyalar = null;
-						Util.dosyaBul(anaDosya, klasorler, "." + yil);
-						if (!klasorler.isEmpty()) {
-							dosyalar = new ArrayList<>();
-							for (File klasor : klasorler)
-								Util.dosyaEkle(klasor, dosyalar);
-							if (!dosyalar.isEmpty()) {
-								int adet = Util.dosyaKopyala(anaDosya.getPath(), yedekDosya.getPath(), dosyalar);
-								if (adet > 0)
-									System.out.println(yil + " yýlýna ait " + adet + " kopyalandý.");
-								else
-									System.out.println(yil + " yýlýna ait kopyalanacak yeni dosya bulunamadý!");
-							} else
-								System.out.println(yil + " yýlýna ait kopyalanacak dosya bulunamadý!");
-							dosyalar = null;
-						} else
-							System.err.println((String) map.get("anaKlasor") + " " + yil + " yýlýna dönem dosyalarý bulunamadý!");
-						klasorler = null;
-					} else {
-						if (!anaDosya.exists())
-							System.err.println((String) map.get("anaKlasor") + " bulunamadý!");
-						if (!yedekDosya.exists())
-							System.err.println((String) map.get("yedekKlasor") + " bulunamadý!");
-					}
+					String mesaj = zipGIBDosyaYedekle(yil, anaDosya, yedekDosya);
+					if (mesaj != null && mesaj.length() > 0)
+						System.out.println(mesaj);
 				}
 				map = null;
+
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
 		}
+	}
+
+	/**
+	 * @param klasor
+	 * @param dosyalar
+	 */
+	private static void dosyaEkle(File klasor, List<File> dosyalar) {
+		if (klasor != null && klasor.isDirectory()) {
+			File[] files = klasor.listFiles();
+			for (int i = 0; i < files.length; i++) {
+				File file = files[i];
+				if (file.isDirectory()) {
+					dosyaEkle(file, dosyalar);
+				} else {
+					String fileName = file.getName();
+					int lastIndex = fileName.lastIndexOf(".");
+					if (lastIndex > 0) {
+						String extName = file.getName().substring(lastIndex + 1);
+						if (extName.equalsIgnoreCase("zip") && fileName.indexOf("-DR-") < 0) {
+							dosyalar.add(file);
+						}
+					}
+
+				}
+			}
+		}
+	}
+
+	/**
+	 * @param inputFile
+	 * @param list
+	 * @param yil
+	 */
+	private static void dosyaBul(File inputFile, List<File> list, String yil) {
+		if (inputFile != null && inputFile.isDirectory()) {
+			File[] files = inputFile.listFiles();
+			for (int i = 0; i < files.length; i++) {
+				File file = files[i];
+				if (file.isDirectory()) {
+					if (file.getName().endsWith(yil)) {
+						list.add(file);
+
+					} else
+						dosyaBul(file, list, yil);
+				}
+			}
+		}
+
+	}
+
+	/**
+	 * @param yil
+	 * @param anaDosya
+	 * @param yedekDosya
+	 * @return
+	 */
+	public static String zipGIBDosyaYedekle(Integer yil, File anaDosya, File yedekDosya) {
+		StringBuffer sb = new StringBuffer();
+		if (anaDosya.exists() && yedekDosya.exists()) {
+			List<File> klasorler = new ArrayList<>(), dosyalar = null;
+			dosyaBul(anaDosya, klasorler, "." + yil);
+			if (!klasorler.isEmpty()) {
+				dosyalar = new ArrayList<>();
+				for (File klasor : klasorler)
+					dosyaEkle(klasor, dosyalar);
+				if (!dosyalar.isEmpty()) {
+					int adet = Util.dosyaKopyala(anaDosya.getPath(), yedekDosya.getPath(), dosyalar);
+					if (adet > 0)
+						sb.append(yil + " yýlýna ait " + adet + " kopyalandý.");
+					else
+						sb.append(yil + " yýlýna ait kopyalanacak yeni dosya bulunamadý!");
+				} else
+					sb.append(yil + " yýlýna ait kopyalanacak dosya bulunamadý!");
+				dosyalar = null;
+			} else
+				sb.append(anaDosya.getPath() + " " + yil + " yýlýna dönem dosyalarý bulunamadý!");
+			klasorler = null;
+		} else {
+			if (!anaDosya.exists())
+				sb.append(anaDosya.getPath() + " bulunamadý!");
+			if (!yedekDosya.exists())
+				sb.append(yedekDosya.getPath() + " bulunamadý!");
+		}
+		String mesaj = sb.toString();
+		sb = null;
+		return mesaj;
 	}
 
 }
