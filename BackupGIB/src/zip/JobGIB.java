@@ -19,8 +19,7 @@ public class JobGIB {
 				if (args != null && args.length == 1)
 					try {
 						int deger = Integer.parseInt(args[0]);
-						if (deger >= BackUpZip.baslangicYil)
-							yil = deger;
+						yil = deger;
 					} catch (Exception e) {
 					}
 				if ((yil != null || map.has("yil")) && map.has("anaKlasor") && map.has("yedekKlasor")) {
@@ -97,33 +96,37 @@ public class JobGIB {
 	 * @param yedekDosya
 	 * @return
 	 */
-	public static String zipGIBDosyaYedekle(Integer yil, File anaDosya, File yedekDosya) {
+	public static String zipGIBDosyaYedekle(int yil, File anaDosya, File yedekDosya) {
 		StringBuffer sb = new StringBuffer();
-		if (anaDosya.exists() && yedekDosya.exists()) {
-			List<File> klasorler = new ArrayList<>(), dosyalar = null;
-			dosyaBul(anaDosya, klasorler, "." + yil);
-			if (!klasorler.isEmpty()) {
-				dosyalar = new ArrayList<>();
-				for (File klasor : klasorler)
-					dosyaEkle(klasor, dosyalar);
-				if (!dosyalar.isEmpty()) {
-					int adet = Util.dosyaKopyala(anaDosya.getPath(), yedekDosya.getPath(), dosyalar);
-					if (adet > 0)
-						sb.append(yil + " yýlýna ait " + adet + " kopyalandý.");
-					else
-						sb.append(yil + " yýlýna ait kopyalanacak yeni dosya bulunamadý!");
+		if (yil >= BackUpZip.baslangicYil) {
+			if (anaDosya.exists() && yedekDosya.exists()) {
+				List<File> klasorler = new ArrayList<>(), dosyalar = null;
+				dosyaBul(anaDosya, klasorler, "." + yil);
+				if (!klasorler.isEmpty()) {
+					dosyalar = new ArrayList<>();
+					for (File klasor : klasorler)
+						dosyaEkle(klasor, dosyalar);
+					if (!dosyalar.isEmpty()) {
+						int adet = Util.dosyaKopyala(anaDosya.getPath(), yedekDosya.getPath(), dosyalar);
+						if (adet > 0)
+							sb.append(yil + " yýlýna ait " + adet + " kopyalandý.");
+						else
+							sb.append(yil + " yýlýna ait kopyalanacak yeni dosya bulunamadý!");
+					} else
+						sb.append(yil + " yýlýna ait kopyalanacak dosya bulunamadý!");
+					dosyalar = null;
 				} else
-					sb.append(yil + " yýlýna ait kopyalanacak dosya bulunamadý!");
-				dosyalar = null;
-			} else
-				sb.append(anaDosya.getPath() + " " + yil + " yýlýna dönem dosyalarý bulunamadý!");
-			klasorler = null;
-		} else {
-			if (!anaDosya.exists())
-				sb.append(anaDosya.getPath() + " bulunamadý!");
-			if (!yedekDosya.exists())
-				sb.append(yedekDosya.getPath() + " bulunamadý!");
-		}
+					sb.append(anaDosya.getPath() + " " + yil + " yýlýna dönem dosyalarý bulunamadý!");
+				klasorler = null;
+			} else {
+				if (!anaDosya.exists())
+					sb.append(anaDosya.getPath() + " bulunamadý!");
+				if (!yedekDosya.exists())
+					sb.append(yedekDosya.getPath() + " bulunamadý!");
+			}
+		} else
+			sb.append(BackUpZip.baslangicYil + " yýlýndan küçük olamaz!");
+
 		String mesaj = sb.toString();
 		sb = null;
 		return mesaj;
