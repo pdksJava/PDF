@@ -27,8 +27,8 @@ public class JobGIB {
 						yil = Integer.parseInt((String) map.get("yil"));
 					String klasorAdi = (String) map.get("anaKlasor");
 					File anaDosya = new File(klasorAdi);
-					klasorAdi = (String) map.get("anaKlasor");
-					File yedekDosya = new File(klasorAdi);
+					String yedekKlasorAdi = (String) map.get("yedekKlasor");
+					File yedekDosya = new File(yedekKlasorAdi);
 					String mesaj = zipGIBDosyaYedekle(yil, anaDosya, yedekDosya);
 					if (mesaj != null && mesaj.length() > 0)
 						System.out.println(mesaj + " " + Util.convertToDateString(new Date(), "yyyy-MM-dd HH:ss"));
