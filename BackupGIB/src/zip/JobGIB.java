@@ -107,11 +107,18 @@ public class JobGIB {
 					for (File klasor : klasorler)
 						dosyaEkle(klasor, dosyalar);
 					if (!dosyalar.isEmpty()) {
-						int adet = Util.dosyaKopyala(anaDosya.getPath(), yedekDosya.getPath(), dosyalar);
-						if (adet > 0)
-							sb.append(yil + " yýlýna ait " + adet + " kopyalandý.");
-						else
-							sb.append(yil + " yýlýna ait kopyalanacak yeni dosya bulunamadý!");
+						String anaDosyaPath = anaDosya.getPath(), yedekDosyaPath = yedekDosya.getPath();
+						if (yedekDosya.exists()) {
+							int adet = Util.dosyaKopyala(anaDosyaPath, yedekDosyaPath, dosyalar);
+							if (adet > 0)
+								sb.append(yil + " yýlýna ait " + adet + " kopyalandý.");
+							else if (anaDosyaPath.equals(yedekDosyaPath))
+								sb.append(yedekDosyaPath + " yedekleme klasörünü farklý seçin!");
+							else
+								sb.append(yil + " yýlýna ait kopyalanacak yeni dosya bulunamadý!");
+						} else
+							sb.append(yedekDosyaPath + " yedekleme klasörünü bulunamadý!");
+
 					} else
 						sb.append(yil + " yýlýna ait kopyalanacak dosya bulunamadý!");
 					dosyalar = null;

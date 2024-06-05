@@ -47,7 +47,7 @@ public class Util {
 				String yeniPath = Util.replaceAllManuel(zipFile.getParent(), dosyaPath, backDosyaPath);
 				File fileYedek = new File(yeniPath);
 				if (!fileYedek.exists())
-					file.mkdirs();
+					fileYedek.mkdirs();
 
 				try {
 					File fileNew = new File(dosyaAdi);
