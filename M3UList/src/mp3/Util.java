@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -87,15 +88,19 @@ public class Util {
 	public static List<String> getStringListFromFile(File file) throws Exception {
 		List<String> list = null;
 		if (file != null && file.exists()) {
-			BufferedReader reader;
-			InputStream in = new FileInputStream(file);
-			reader = new BufferedReader(new InputStreamReader(in, "utf-8"));
-			String line = reader.readLine();
 			list = new ArrayList<String>();
-			while (line != null) {
+			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
+			String line;
+			while ((line = reader.readLine()) != null) {
 				list.add(line);
-				line = reader.readLine();
 			}
+			// InputStream in = new FileInputStream(file);
+			// BufferedReader reader = new BufferedReader(new InputStreamReader(in, "utf-8"));
+			// String line = reader.readLine();
+			// while (line != null) {
+			// list.add(line);
+			// line = reader.readLine();
+			// }
 		}
 		return list;
 	}
@@ -108,6 +113,12 @@ public class Util {
 		fileWrite(content, fileName, Boolean.TRUE);
 	}
 
+	/**
+	 * @param content
+	 * @param fileName
+	 * @param ekle
+	 * @throws Exception
+	 */
 	private static void fileWrite(String content, String fileName, Boolean ekle) throws Exception {
 		String path = "/tmp/pdks";
 		if (fileName.indexOf("\\") > 0)
@@ -146,8 +157,8 @@ public class Util {
 				if (printWriter != null) {
 					printWriter.flush();
 					printWriter.close();
-					// fos.flush();
-					// fos.close();
+					fos.flush();
+					fos.close();
 				}
 			}
 

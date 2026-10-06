@@ -22,16 +22,16 @@ public class M3UListApp {
 	public static void main(String[] args) {
 		final JFrame myFrame = new JFrame();
 		final JFileChooser chooser = new JFileChooser("I:\\Data");
-		final JButton btn = new JButton("Dosya seç");
+		final JButton btn = new JButton("Dosya seÃ§");
 		btn.setBounds(50, 20, 100, 40);
 		chooser.setBounds(50, 50, 500, 500);
 		myFrame.setTitle("Mp3 Liste Kontrol");
 		myFrame.setSize(800, 600);
-		chooser.setDialogTitle("Dosya Seç");
+		chooser.setDialogTitle("Dosya SeÃ§");
 		chooser.setMultiSelectionEnabled(false);
 		chooser.setFileFilter(new FileNameExtensionFilter("MP3 List Dosya", "m3u8"));
 		chooser.setLocale(Util.TR_LOCALE);
-		chooser.setApproveButtonText("Seç");
+		chooser.setApproveButtonText("SeÃ§");
 		JPanel jPanel = new JPanel();
 		jPanel.setBounds(0, 0, 800, 80);
 		jPanel.add(btn);
@@ -68,18 +68,35 @@ public class M3UListApp {
 					List<Liste> listOrj = new ArrayList<Liste>();
 					Liste listeIlk = null;
 					List<String> list = new ArrayList<>();
+					int index = listDosya.size();
+					boolean yazildi = false;
 					for (Iterator iterator = listDosya.iterator(); iterator.hasNext();) {
 						String line = (String) iterator.next();
+						if (list.contains(line))
+							continue;
 						if (ilkSatir != null) {
 							if (line.startsWith("#EXTINF:")) {
+								yazildi = false;
 								listeIlk = null;
-								if (list.contains(line))
-									continue;
 								list.add(line);
 								listeIlk = new Liste(line, null);
 								listOrj.add(listeIlk);
-							} else if (listeIlk != null)
+							} else if (yazildi == false && listeIlk != null) {
 								listeIlk.setValue(line);
+								yazildi = true;
+							}
+
+							else if (line.endsWith(".mp3")) {
+								int sonKarakter1 = line.lastIndexOf("/"), sonKarakter2 = line.lastIndexOf("\\");
+								if (sonKarakter1 > 0 || sonKarakter2 > 0) {
+									int dosyaIndex = sonKarakter2 > sonKarakter1 ? sonKarakter2 : sonKarakter1;
+									String dosyaAdi = line.substring(dosyaIndex + 1);
+									dosyaAdi = dosyaAdi.substring(0, dosyaAdi.indexOf("."));
+									Liste liste = new Liste("#EXTINF:" + (++index) + "," + dosyaAdi, line);
+									listOrj.add(liste);
+									yazildi = true;
+								}
+							}
 						} else
 							ilkSatir = line;
 
@@ -101,7 +118,7 @@ public class M3UListApp {
 								int sira = 0;
 								maxAdet = 0;
 
-								System.out.println("Ýþlem Adet : " + islemAdet + " " + new Date() + "\n");
+								System.out.println("iÅŸlem Adet : " + islemAdet + " " + new Date() + "\n");
 
 								for (Liste liste : listOrj) {
 									liste.setNumValue(sira);
@@ -259,7 +276,7 @@ public class M3UListApp {
 									devam = false;
 							} catch (Exception e2) {
 								e2.printStackTrace();
-								System.err.println("Ýþlem Adet : " + islemAdet + " " + new Date() + "\n" + e2);
+								System.err.println("iÅŸlem Adet : " + islemAdet + " " + new Date() + "\n" + e2);
 							}
 							if (degisti == false || farkVar || islemAdet > 50) {
 								StringBuffer sb = new StringBuffer();
@@ -288,13 +305,17 @@ public class M3UListApp {
 									String content = sb.toString();
 									try {
 										Util.fileWrite(content, fileName);
+										// BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName, false), StandardCharsets.UTF_8));
+										// writer.write(content);
+										// writer.flush();
+										// writer.close();
 									} catch (Exception e1) {
 										e1.printStackTrace();
 									}
 
 									devam = !txt.exists();
 									if (devam == false) {
-										System.out.println(fileName + " oluþtu.");
+										System.out.println(fileName + " oluÅŸtu.");
 										JOptionPane.showMessageDialog(null, fileName);
 									}
 								}
