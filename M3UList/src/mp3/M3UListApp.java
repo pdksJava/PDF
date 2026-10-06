@@ -2,7 +2,11 @@ package mp3;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -21,7 +25,7 @@ public class M3UListApp {
 
 	public static void main(String[] args) {
 		final JFrame myFrame = new JFrame();
-		final JFileChooser chooser = new JFileChooser("I:\\Data");
+		final JFileChooser chooser = new JFileChooser("D:\\Data");
 		final JButton btn = new JButton("Dosya seç");
 		btn.setBounds(50, 20, 100, 40);
 		chooser.setBounds(50, 50, 500, 500);
@@ -267,9 +271,6 @@ public class M3UListApp {
 										if (guncellendi)
 											System.out.println(islemAdet + ". " + key + " " + solistSarkiSirasi.toString() + " : " + siraFark);
 
-									} else {
-										// Liste listeSimdi = listOrj.get(solistSarkiSirasi.get(0));
-										// System.err.println(key + " " + listeSimdi.getNumValue() + "\n");
 									}
 								}
 								if (degisti == false)
@@ -304,11 +305,11 @@ public class M3UListApp {
 										txt.delete();
 									String content = sb.toString();
 									try {
-										Util.fileWrite(content, fileName);
-										// BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName, false), StandardCharsets.UTF_8));
-										// writer.write(content);
-										// writer.flush();
-										// writer.close();
+									//	Util.fileWrite(content, fileName);
+										BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName, false), StandardCharsets.UTF_8));
+										writer.write(content);
+										writer.flush();
+										writer.close();
 									} catch (Exception e1) {
 										e1.printStackTrace();
 									}

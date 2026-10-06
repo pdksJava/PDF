@@ -89,13 +89,14 @@ public class Util {
 		List<String> list = null;
 		if (file != null && file.exists()) {
 			list = new ArrayList<String>();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
+			// BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
+			InputStream in = new FileInputStream(file);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
 			String line;
 			while ((line = reader.readLine()) != null) {
 				list.add(line);
 			}
-			// InputStream in = new FileInputStream(file);
-			// BufferedReader reader = new BufferedReader(new InputStreamReader(in, "utf-8"));
+
 			// String line = reader.readLine();
 			// while (line != null) {
 			// list.add(line);
