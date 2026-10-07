@@ -32,6 +32,7 @@ public class M3UListApp {
 		final JFrame myFrame = new JFrame();
 		final JFileChooser chooser = new JFileChooser("D:\\Data");
 		final JButton btn = new JButton("Dosya seç");
+
 		btn.setBounds(50, 20, 100, 40);
 		chooser.setBounds(50, 50, 500, 500);
 		myFrame.setTitle("Mp3 Liste Kontrol");
@@ -107,12 +108,12 @@ public class M3UListApp {
 										AudioFile audioFile = AudioFileIO.read(mp3File);
 										tag = audioFile.getTag();
 										if (tag != null) {
-										 
+
 											String sarkiAdi = tag.getFirst(FieldKey.TITLE);
 											String sanatci = tag.getFirst(FieldKey.ARTIST);
-//											String album = tag.getFirst(FieldKey.ALBUM);
-//											String yil = tag.getFirst(FieldKey.YEAR);
-//											String janr = tag.getFirst(FieldKey.GENRE);
+											// String album = tag.getFirst(FieldKey.ALBUM);
+											// String yil = tag.getFirst(FieldKey.YEAR);
+											// String janr = tag.getFirst(FieldKey.GENRE);
 											dosyaAdi = sanatci + " - " + sarkiAdi;
 										}
 									} catch (Exception e1) {
