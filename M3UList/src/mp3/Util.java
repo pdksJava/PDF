@@ -11,9 +11,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -77,6 +79,160 @@ public class Util {
 			}
 		}
 		return dosyaIcerik;
+
+	}
+
+	/**
+	 * @param str
+	 * @param findStr
+	 * @param replace
+	 * @return
+	 */
+	public static String replaceAllManuel(String str, String findStr, String replace) {
+		if ((str != null) && (findStr != null) && (findStr.length() > 0) && (replace != null)) {
+			int l = findStr.length();
+			while (str.indexOf(findStr) >= 0) {
+				StringBuffer lSb = new StringBuffer();
+				int i = 0;
+				int j = str.indexOf(findStr, i);
+				int m = str.length();
+				if (j > -1) {
+					while (j > -1) {
+						if (i != j)
+							lSb.append(str.substring(i, j));
+						lSb.append(replace);
+						i = j + l;
+						j = (i > m) ? -1 : str.indexOf(findStr, i);
+					}
+					if (i < m)
+						lSb.append(str.substring(i));
+
+				} else
+					lSb.append(str);
+
+				str = lSb.toString();
+				if (replace.contains(findStr))
+					break;
+				// if (replace.indexOf(findStr) >= 0)
+				// break;
+			}
+		}
+
+		return str;
+	}
+
+	/**
+	 * @param str
+	 * @param findStr
+	 * @param replace
+	 * @return
+	 */
+	public static String replaceAll(String str, String findStr, String replace) {
+		if (str != null && findStr != null && replace != null && str.contains(findStr)) {
+			if (replace.contains(findStr))
+				str = str.replaceAll(findStr, replace);
+			else
+				str = replaceAllManuel(str, findStr, replace);
+		}
+		return str;
+	}
+
+	/**
+	 * @param xml
+	 * @param map
+	 * @return
+	 */
+	public static String getStringReplaceMap(String xml, LinkedHashMap<String, String> map) {
+		String data = xml;
+		if (data != null && map != null) {
+			for (String pattern : map.keySet()) {
+				String replace = map.get(pattern);
+				if (data.indexOf(replace) >= 0) {
+					data = replaceAll(data, replace, pattern);
+				}
+			}
+		}
+		return data;
+	}
+
+	/**
+	 * @param str
+	 * @return
+	 */
+	public static String getUTF8String(String str) {
+		String data = str;
+		if (data != null) {
+			LinkedHashMap<String, String> map1 = getUnicodeMap();
+			// LinkedHashMap<String, String> map1 = getUTF8Map();
+			// LinkedHashMap<String, String> map2 = getUnicodeMap();
+			// LinkedHashMap<String, String> map3 = getUnicodeHexMap();
+			// map1.putAll(map2);
+			// map1.putAll(map3);
+			data = getStringReplaceMap(data, map1);
+			map1 = null;
+			// map2 = null;
+			// map3 = null;
+		}
+		return data;
+
+	}
+
+	/**
+	 * @return
+	 */
+	public static LinkedHashMap<String, String> getUTF8Map() {
+		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+		map.put("&#304;", "İ");
+		map.put("&#305;", "ı");
+		map.put("&#214;", "Ö");
+		map.put("&#246;", "ö");
+		map.put("&#220;", "Ü");
+		map.put("&#252;", "ü");
+		map.put("&#199;", "Ç");
+		map.put("&#231;", "ç");
+		map.put("&#286;", "Ğ");
+		map.put("&#287;", "ğ");
+		map.put("&#350;", "Ş");
+		map.put("&#351;", "ş");
+		return map;
+	}
+
+	/**
+	 * @return
+	 */
+	public static LinkedHashMap<String, String> getUnicodeMap() {
+		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+		map.put("\u015E", "Ş");
+		map.put("\u015F", "ş");
+		map.put("\u011E", "Ğ");
+		map.put("\u011F", "ğ");
+		map.put("\u00D6", "Ö");
+		map.put("\u00F6", "ö");
+		map.put("\u00DC", "Ü");
+		map.put("\u00FC", "ü");
+		map.put("\u00C7", "Ç");
+		map.put("\u00E7", "ç");
+		map.put("\u0130", "İ");
+		map.put("\u0131", "ı");
+		return map;
+	}
+
+	/**
+	 * @return
+	 */
+	public static LinkedHashMap<String, String> getUnicodeHexMap() {
+		LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
+		map.put("&#x11E;", "Ğ");
+		map.put("&#x11F;", "ğ");
+		map.put("&#x130;", "İ");
+		map.put("&#x131;", "ı");
+		map.put("&#x15E;", "Ş");
+		map.put("&#x15F;", "ş");
+		map.put("&#xDC;", "Ü");
+		map.put("&#xFC;", "ü");
+		map.put("&#xD6;", "Ö");
+		map.put("&#xF6;", "ö");
+		return map;
 	}
 
 	/**
@@ -87,15 +243,22 @@ public class Util {
 	public static List<String> getStringListFromFile(File file) throws Exception {
 		List<String> list = null;
 		if (file != null && file.exists()) {
-			BufferedReader reader;
-			InputStream in = new FileInputStream(file);
-			reader = new BufferedReader(new InputStreamReader(in, "utf-8"));
-			String line = reader.readLine();
 			list = new ArrayList<String>();
-			while (line != null) {
+			// BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
+			InputStream in = new FileInputStream(file);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+			String line;
+			while ((line = reader.readLine()) != null) {
+				if (line.indexOf("\uFEFF") >= 0)
+					System.out.println("");
 				list.add(line);
-				line = reader.readLine();
 			}
+
+			// String line = reader.readLine();
+			// while (line != null) {
+			// list.add(line);
+			// line = reader.readLine();
+			// }
 		}
 		return list;
 	}
@@ -108,6 +271,12 @@ public class Util {
 		fileWrite(content, fileName, Boolean.TRUE);
 	}
 
+	/**
+	 * @param content
+	 * @param fileName
+	 * @param ekle
+	 * @throws Exception
+	 */
 	private static void fileWrite(String content, String fileName, Boolean ekle) throws Exception {
 		String path = "/tmp/pdks";
 		if (fileName.indexOf("\\") > 0)
@@ -146,8 +315,8 @@ public class Util {
 				if (printWriter != null) {
 					printWriter.flush();
 					printWriter.close();
-					// fos.flush();
-					// fos.close();
+					fos.flush();
+					fos.close();
 				}
 			}
 
