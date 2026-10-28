@@ -317,8 +317,9 @@ public class M3UListApp {
 							}
 							if (degisti == false || farkVar || islemAdet > 50) {
 								StringBuffer sb = new StringBuffer();
-								sb.append("#EXTM3U" + "\n");
-								List<String> strList = new ArrayList<String>();
+								if (ilkSatir == null || ilkSatir.contains("EXTM3U") == false)
+									sb.append("#EXTM3U\n");
+ 								List<String> strList = new ArrayList<String>();
 								if (duzgunBasladi)
 									sb.append(ilkSatir + "\n");
 								for (Liste listeSon : listOrj) {
