@@ -106,7 +106,7 @@ public class M3UListApp {
 								baslik = line;
 
 							} else if (yazildi == false && baslik != null) {
-								if (line.indexOf("Kxxxm") > 0)
+								if (line.indexOf("xxxxssd") > 0)
 									klasor = file.getParentFile().getPath();
 								String gercekStr = line;
 								if (line.startsWith(".")) {
@@ -115,10 +115,18 @@ public class M3UListApp {
 								} else
 									mp3File = new File(line);
 								if (mp3File.exists()) {
-									if (line.indexOf("  ") > 0) {
-										line = line.replaceAll("  ", " ");
-										mp3File.renameTo(new File(line));
-									}
+									if (line.indexOf("  ") > 0 || line.indexOf("-") > 0) {
+										String oldStr = line;
+										if (line.indexOf("-") > 0)
+											line = line.replaceAll("-", " - ");
+										if (line.indexOf("  ") > 0)
+											line = line.replaceAll("  ", " ");
+										if (line.equals(oldStr) == false) {
+											System.err.println(mp3File.getAbsolutePath() + " boşluk " + line + " düzenlendi!");
+											mp3File.renameTo(new File(line));
+											mp3File = new File(line);
+										}
+ 									}
 
 									if (dosyaKontrol.isSelected() == false) {
 										list.add(baslik);
@@ -132,12 +140,10 @@ public class M3UListApp {
 										mp3Adi = mp3Adi.substring(0, mp3Adi.lastIndexOf("."));
 										String dosyaAdi = null;
 										try {
-
-											AudioFile audioFile = AudioFileIO.read(mp3File);
+ 											AudioFile audioFile = AudioFileIO.read(mp3File);
 											tag = audioFile.getTag();
 											if (tag != null) {
-
-												String sarkiAdi = tag.getFirst(FieldKey.TITLE);
+ 												String sarkiAdi = tag.getFirst(FieldKey.TITLE);
 												String sanatci = tag.getFirst(FieldKey.ARTIST);
 												// String album = tag.getFirst(FieldKey.ALBUM);
 												// String yil = tag.getFirst(FieldKey.YEAR);
