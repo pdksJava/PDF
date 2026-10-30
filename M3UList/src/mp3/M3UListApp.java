@@ -13,10 +13,14 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -29,12 +33,16 @@ import org.jaudiotagger.tag.Tag;
 public class M3UListApp {
 
 	public static void main(String[] args) {
+		Logger.getLogger("org.jaudiotagger").setLevel(Level.OFF);
 		final JFrame myFrame = new JFrame();
 		final JFileChooser chooser = new JFileChooser("D:\\Data");
 		final JButton btn = new JButton("Dosya seç");
-
-		btn.setBounds(50, 20, 100, 40);
-		chooser.setBounds(50, 50, 500, 500);
+		final JCheckBox dosyaKontrol = new JCheckBox();
+		final JLabel baslik = new JLabel("Dosya Kontrol");
+		baslik.setBounds(100, 50, 150, 40);
+		dosyaKontrol.setBounds(300, 50, 40, 40);
+		btn.setBounds(100, 20, 100, 40);
+		chooser.setBounds(100, 50, 500, 500);
 		myFrame.setTitle("Mp3 Liste Kontrol");
 		myFrame.setSize(800, 600);
 		chooser.setDialogTitle("Dosya Seç");
@@ -45,6 +53,9 @@ public class M3UListApp {
 		JPanel jPanel = new JPanel();
 		jPanel.setBounds(0, 0, 800, 80);
 		jPanel.add(btn);
+
+		myFrame.add(baslik);
+		myFrame.add(dosyaKontrol);
 		myFrame.add(chooser);
 		myFrame.add(jPanel);
 		chooser.setVisible(false);
@@ -79,7 +90,9 @@ public class M3UListApp {
 					Liste listeIlk = null;
 					List<String> list = new ArrayList<>();
 					int index = listDosya.size();
+					String klasor = file.getParentFile().getPath();
 					boolean yazildi = false, duzgunBasladi = false;
+					String baslik = null;
 					for (Iterator iterator = listDosya.iterator(); iterator.hasNext();) {
 						String satir = (String) iterator.next();
 						if (list.contains(satir))
@@ -90,51 +103,70 @@ public class M3UListApp {
 							if (line.startsWith("#EXTINF:")) {
 								duzgunBasladi = true;
 								yazildi = false;
-								listeIlk = null;
-								list.add(line);
-								listeIlk = new Liste(line, null);
-								listOrj.add(listeIlk);
-							} else if (yazildi == false && listeIlk != null) {
-								mp3File = new File(line);
-								if (line.startsWith(".") || mp3File.exists())
-									listeIlk.setValue(line);
-								yazildi = true;
-							} else if (line.endsWith(".mp3")) {
-								mp3File = new File(line);
-								Tag tag = null;
-								String dosyaAdi = null;
-								if (line.startsWith(".") || mp3File.exists()) {
-									try {
-										AudioFile audioFile = AudioFileIO.read(mp3File);
-										tag = audioFile.getTag();
-										if (tag != null) {
+								baslik = line;
 
-											String sarkiAdi = tag.getFirst(FieldKey.TITLE);
-											String sanatci = tag.getFirst(FieldKey.ARTIST);
-											// String album = tag.getFirst(FieldKey.ALBUM);
-											// String yil = tag.getFirst(FieldKey.YEAR);
-											// String janr = tag.getFirst(FieldKey.GENRE);
-											dosyaAdi = sanatci + " - " + sarkiAdi;
+							} else if (yazildi == false && baslik != null) {
+								mp3File = new File(line);
+								String gercekStr = line;
+								if (line.startsWith(".")) {
+									gercekStr = klasor + line.substring(1);
+									mp3File = new File(gercekStr);
+									if (mp3File.exists() == false)
+										continue;
+								}
+								if (mp3File.exists()) {
+									if (line.indexOf("  ") > 0) {
+										line = line.replaceAll("  ", " ");
+										mp3File.renameTo(new File(line));
+									}
+
+									if (dosyaKontrol.isSelected() == false) {
+										list.add(baslik);
+										listeIlk = new Liste(baslik, null);
+										listOrj.add(listeIlk);
+										listeIlk.setValue(line);
+										yazildi = true;
+									} else {
+										Tag tag = null;
+										String mp3Adi = mp3File.getName();
+										mp3Adi = mp3Adi.substring(0, mp3Adi.lastIndexOf("."));
+										String dosyaAdi = null;
+										try {
+
+											AudioFile audioFile = AudioFileIO.read(mp3File);
+											tag = audioFile.getTag();
+											if (tag != null) {
+
+												String sarkiAdi = tag.getFirst(FieldKey.TITLE);
+												String sanatci = tag.getFirst(FieldKey.ARTIST);
+												// String album = tag.getFirst(FieldKey.ALBUM);
+												// String yil = tag.getFirst(FieldKey.YEAR);
+												// String janr = tag.getFirst(FieldKey.GENRE);
+												dosyaAdi = sanatci + " - " + sarkiAdi;
+											}
+										} catch (Exception e1) {
+											e1.printStackTrace();
 										}
-									} catch (Exception e1) {
-										e1.printStackTrace();
+
+										if (tag == null) {
+											int sonKarakter1 = line.lastIndexOf("/"), sonKarakter2 = line.lastIndexOf("\\");
+											if (sonKarakter1 > 0 || sonKarakter2 > 0) {
+												int dosyaIndex = sonKarakter2 > sonKarakter1 ? sonKarakter2 : sonKarakter1;
+												dosyaAdi = line.substring(dosyaIndex + 1);
+												dosyaAdi = dosyaAdi.substring(0, dosyaAdi.indexOf(".")).trim();
+											}
+										}
+										if (dosyaAdi != null) {
+											if (mp3Adi.trim().equals(dosyaAdi.trim())) {
+												Liste liste = new Liste("#EXTINF:" + (++index) + "," + dosyaAdi.trim(), line);
+												listOrj.add(liste);
+												yazildi = true;
+											} else
+												System.err.println(dosyaAdi + " -> " + mp3File.getName());
+										}
 									}
-								}
-								if (tag == null) {
-									int sonKarakter1 = line.lastIndexOf("/"), sonKarakter2 = line.lastIndexOf("\\");
-									if (sonKarakter1 > 0 || sonKarakter2 > 0) {
-										int dosyaIndex = sonKarakter2 > sonKarakter1 ? sonKarakter2 : sonKarakter1;
-										dosyaAdi = line.substring(dosyaIndex + 1);
-										dosyaAdi = dosyaAdi.substring(0, dosyaAdi.indexOf("."));
-									}
-								}
-								if (line.indexOf("Ali Eren Yüksel & Ali Doğan Gönültaş") > 0)
-									System.out.println("");
-								if (dosyaAdi != null) {
-									Liste liste = new Liste("#EXTINF:" + (++index) + "," + dosyaAdi, line);
-									listOrj.add(liste);
-									yazildi = true;
-								}
+								} else
+									System.err.println(line + " dosya yok!");
 							}
 
 						} else
@@ -277,7 +309,6 @@ public class M3UListApp {
 																}
 
 															}
-
 														}
 
 													} else {
@@ -319,7 +350,7 @@ public class M3UListApp {
 								StringBuffer sb = new StringBuffer();
 								if (ilkSatir == null || ilkSatir.contains("EXTM3U") == false)
 									sb.append("#EXTM3U\n");
- 								List<String> strList = new ArrayList<String>();
+								List<String> strList = new ArrayList<String>();
 								if (duzgunBasladi)
 									sb.append(ilkSatir + "\n");
 								for (Liste listeSon : listOrj) {
