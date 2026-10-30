@@ -106,14 +106,14 @@ public class M3UListApp {
 								baslik = line;
 
 							} else if (yazildi == false && baslik != null) {
-								mp3File = new File(line);
+								if (line.indexOf("Kxxxm") > 0)
+									klasor = file.getParentFile().getPath();
 								String gercekStr = line;
 								if (line.startsWith(".")) {
 									gercekStr = klasor + line.substring(1);
 									mp3File = new File(gercekStr);
-									if (mp3File.exists() == false)
-										continue;
-								}
+								} else
+									mp3File = new File(line);
 								if (mp3File.exists()) {
 									if (line.indexOf("  ") > 0) {
 										line = line.replaceAll("  ", " ");
@@ -162,11 +162,11 @@ public class M3UListApp {
 												listOrj.add(liste);
 												yazildi = true;
 											} else
-												System.err.println(dosyaAdi + " -> " + mp3File.getName());
+												System.err.println(dosyaAdi + " -> " + mp3File.getAbsolutePath());
 										}
 									}
 								} else
-									System.err.println(line + " dosya yok!");
+									System.err.println(gercekStr + " dosya yok!");
 							}
 
 						} else
