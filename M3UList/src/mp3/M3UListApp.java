@@ -23,6 +23,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.jaudiotagger.audio.AudioFile;
@@ -33,15 +34,31 @@ import org.jaudiotagger.tag.Tag;
 public class M3UListApp {
 
 	public static void main(String[] args) {
+		File[] roots = File.listRoots();
+		String rootStr = "";
+		for (int i = 0; i < roots.length; i++) {
+			File root = new File(roots[i] + "Data\\");
+			if (root.exists())
+				rootStr = root.getPath();
+
+		}
+
 		Logger.getLogger("org.jaudiotagger").setLevel(Level.OFF);
 		final JFrame myFrame = new JFrame();
-		final JFileChooser chooser = new JFileChooser("D:\\Data");
-		final JButton btn = new JButton("Dosya seç");
+		final JFileChooser chooser = new JFileChooser(rootStr);
+		final JButton btn = new JButton("Çalma Listesi seç");
+		final JFileChooser chooser1 = new JFileChooser(rootStr);
+		final JButton btn1 = new JButton("Mp3 Klasör kontrol");
 		final JCheckBox dosyaKontrol = new JCheckBox();
 		final JLabel baslik = new JLabel("Dosya Kontrol");
+		final JTextArea textArea = new JTextArea();
+		
 		baslik.setBounds(100, 50, 150, 40);
 		dosyaKontrol.setBounds(300, 50, 40, 40);
 		btn.setBounds(100, 20, 100, 40);
+		btn1.setBounds(300, 300, 100, 40);
+		textArea.setBounds(600, 100, 300, 300);
+		chooser1.setBounds(100, 50, 500, 500);
 		chooser.setBounds(100, 50, 500, 500);
 		myFrame.setTitle("Mp3 Liste Kontrol");
 		myFrame.setSize(800, 600);
@@ -50,24 +67,107 @@ public class M3UListApp {
 		chooser.setFileFilter(new FileNameExtensionFilter("MP3 List Dosya", "m3u8"));
 		chooser.setLocale(Util.TR_LOCALE);
 		chooser.setApproveButtonText("Seç");
+		chooser1.setDialogTitle("Klasör Seç");
+		chooser1.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		chooser1.setApproveButtonText("Klasör Seç");
 		JPanel jPanel = new JPanel();
 		jPanel.setBounds(0, 0, 800, 80);
 		jPanel.add(btn);
-
+		jPanel.add(btn1);
 		myFrame.add(baslik);
 		myFrame.add(dosyaKontrol);
 		myFrame.add(chooser);
 		myFrame.add(jPanel);
+		myFrame.add(chooser1);
+		myFrame.add(textArea);
+
+		chooser1.setVisible(false);
 		chooser.setVisible(false);
 		myFrame.setVisible(true);
-
+		textArea.setVisible(false);
+		textArea.setEditable(false);
 		btn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				textArea.setVisible(false);
+				textArea.setText("");
 				btn.setVisible(false);
 				chooser.setSelectedFile(null);
 				chooser.setSelectedFiles(null);
 				chooser.setVisible(true);
+			}
+		});
+
+		btn1.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				btn1.setVisible(false);
+				chooser1.setSelectedFile(null);
+				textArea.setVisible(false);
+				textArea.setText("");
+				chooser1.setVisible(true);
+			}
+		});
+		chooser1.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				String actionCommand = e.getActionCommand();
+
+				if (actionCommand.equals(JFileChooser.APPROVE_SELECTION)) {
+					StringBuffer sb = new StringBuffer();
+					File file = chooser1.getSelectedFile();
+					File[] dosyalar = file.listFiles();
+					Tag tag = null;
+					for (int i = 0; i < dosyalar.length; i++) {
+						File mp3File = dosyalar[i];
+						if (mp3File.isFile() && mp3File.getName().toLowerCase().endsWith(".mp3")) {
+							String line = mp3File.getAbsolutePath();
+							String oldStr = line;
+							if (line.indexOf("  ") > 0 || (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))) {
+
+								if (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))
+									line = line.replaceAll("-", " - ");
+								if (line.indexOf("  ") > 0)
+									line = line.replaceAll("  ", " ");
+								if (line.equals(oldStr) == false) {
+									System.err.println(mp3File.getAbsolutePath() + " boşluk " + line + " düzenlendi!");
+									mp3File.renameTo(new File(line));
+									mp3File = new File(line);
+								}
+							}
+							try {
+								AudioFile audioFile = AudioFileIO.read(mp3File);
+								tag = audioFile.getTag();
+								String dosyaAdi = "";
+								String mp3Adi = mp3File.getName();
+								mp3Adi = mp3Adi.substring(0, mp3Adi.lastIndexOf("."));
+								if (tag != null) {
+									String sarkiAdi = tag.getFirst(FieldKey.TITLE);
+									String sanatci = tag.getFirst(FieldKey.ARTIST);
+									// String album = tag.getFirst(FieldKey.ALBUM);
+									// String yil = tag.getFirst(FieldKey.YEAR);
+									// String janr = tag.getFirst(FieldKey.GENRE);
+									dosyaAdi = sanatci.trim() + " - " + sarkiAdi.trim();
+									if (dosyaAdi.equals(mp3Adi) == false) {
+										String str = oldStr + " --> " + dosyaAdi;
+										sb.append(str + "\n");
+										// System.err.println(str);
+
+									}
+								}
+							} catch (Exception e2) {
+								// TODO: handle exception
+							}
+						}
+					}
+					if (sb.length() > 0) {
+						textArea.setText(sb.toString());
+						textArea.setVisible(true);
+					}
+					sb = null;
+				}
+				chooser1.setVisible(false);
+				btn1.setVisible(true);
 			}
 		});
 		chooser.addActionListener(new ActionListener() {
@@ -77,6 +177,7 @@ public class M3UListApp {
 				chooser.setVisible(false);
 
 				if (actionCommand.equals(JFileChooser.APPROVE_SELECTION)) {
+					StringBuffer sb = new StringBuffer();
 					File file = chooser.getSelectedFile();
 					List<String> listDosya = null;
 					try {
@@ -115,18 +216,6 @@ public class M3UListApp {
 								} else
 									mp3File = new File(line);
 								if (mp3File.exists()) {
-									if (line.indexOf("  ") > 0 || (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))) {
-										String oldStr = line;
-										if (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))
-											line = line.replaceAll("-", " - ");
-										if (line.indexOf("  ") > 0)
-											line = line.replaceAll("  ", " ");
-										if (line.equals(oldStr) == false) {
-											System.err.println(mp3File.getAbsolutePath() + " boşluk " + line + " düzenlendi!");
-											mp3File.renameTo(new File(line));
-											mp3File = new File(line);
-										}
-									}
 
 									if (dosyaKontrol.isSelected() == false) {
 										list.add(baslik);
@@ -167,18 +256,26 @@ public class M3UListApp {
 												Liste liste = new Liste("#EXTINF:" + (++index) + "," + dosyaAdi.trim(), line);
 												listOrj.add(liste);
 												yazildi = true;
-											} else
-												System.err.println(dosyaAdi + " -> " + mp3File.getAbsolutePath());
+											} else {
+												sb.append(dosyaAdi + " -> " + mp3File.getAbsolutePath());
+
+											}
+
 										}
 									}
 								} else
-									System.err.println(gercekStr + " dosya yok!");
+									sb.append(gercekStr + " dosya yok!");
 							}
 
 						} else
 							ilkSatir = line;
 
 					}
+					if (sb.length() > 0) {
+						textArea.setText(sb.toString());
+						textArea.setVisible(true);
+					}
+					sb = null;
 					list = null;
 					int orjFak = 0;
 					LinkedHashMap<String, List<Integer>> map = new LinkedHashMap<String, List<Integer>>();
@@ -353,7 +450,7 @@ public class M3UListApp {
 								System.err.println("işlem Adet : " + islemAdet + " " + new Date() + "\n" + e2);
 							}
 							if (degisti == false || farkVar || islemAdet > 50) {
-								StringBuffer sb = new StringBuffer();
+								sb = new StringBuffer();
 								if (ilkSatir == null || ilkSatir.contains("EXTM3U") == false)
 									sb.append("#EXTM3U\n");
 								List<String> strList = new ArrayList<String>();
@@ -369,7 +466,7 @@ public class M3UListApp {
 											sb.append(listeSon.getValue() + "\n");
 										}
 									} else {
-										System.err.println(str);
+										sb.append(str + "\n");
 									}
 
 								}
@@ -404,6 +501,11 @@ public class M3UListApp {
 						}
 
 					}
+					if (sb.length() > 0) {
+						textArea.append(sb.toString());
+						textArea.setVisible(true);
+					}
+					sb = null;
 				}
 
 				btn.setVisible(true);
