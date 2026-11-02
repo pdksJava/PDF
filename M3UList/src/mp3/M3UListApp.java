@@ -1,5 +1,6 @@
 package mp3;
 
+import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
@@ -22,7 +23,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -45,6 +46,11 @@ public class M3UListApp {
 
 		Logger.getLogger("org.jaudiotagger").setLevel(Level.OFF);
 		final JFrame myFrame = new JFrame();
+		myFrame.setLayout(null);
+		myFrame.setTitle("Mp3 Liste Kontrol");
+		myFrame.setSize(850, 650);
+		myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		myFrame.setLocationRelativeTo(null);
 		final JFileChooser chooser = new JFileChooser(rootStr);
 		final JButton btn = new JButton("Çalma Listesi seç");
 		final JFileChooser chooser1 = new JFileChooser(rootStr);
@@ -52,14 +58,16 @@ public class M3UListApp {
 		final JCheckBox dosyaKontrol = new JCheckBox();
 		final JLabel baslik = new JLabel("Dosya Kontrol");
 		final JTextArea textArea = new JTextArea();
-		
+		final JScrollPane scrollPane = new JScrollPane(textArea);
 		baslik.setBounds(100, 50, 150, 40);
 		dosyaKontrol.setBounds(300, 50, 40, 40);
-		btn.setBounds(100, 20, 100, 40);
-		btn1.setBounds(300, 300, 100, 40);
-		textArea.setBounds(600, 100, 300, 300);
-		chooser1.setBounds(100, 50, 500, 500);
-		chooser.setBounds(100, 50, 500, 500);
+		scrollPane.setBounds(100, 100, 650, 400);
+		btn.setBounds(100, 20, 200, 40);
+		btn1.setBounds(350, 20, 200, 40);
+		textArea.setBounds(100, 150, 400, 400);
+		chooser1.setBounds(100, 150, 400, 400);
+		chooser.setBounds(100, 150, 400, 400);
+		scrollPane.setVisible(true);
 		myFrame.setTitle("Mp3 Liste Kontrol");
 		myFrame.setSize(800, 600);
 		chooser.setDialogTitle("Dosya Seç");
@@ -70,17 +78,17 @@ public class M3UListApp {
 		chooser1.setDialogTitle("Klasör Seç");
 		chooser1.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		chooser1.setApproveButtonText("Klasör Seç");
-		JPanel jPanel = new JPanel();
-		jPanel.setBounds(0, 0, 800, 80);
-		jPanel.add(btn);
-		jPanel.add(btn1);
-		myFrame.add(baslik);
-		myFrame.add(dosyaKontrol);
-		myFrame.add(chooser);
-		myFrame.add(jPanel);
-		myFrame.add(chooser1);
-		myFrame.add(textArea);
 
+		Container cp = myFrame.getContentPane();
+		cp.add(baslik);
+		cp.add(dosyaKontrol);
+		cp.add(btn);
+		cp.add(btn1);
+		cp.add(chooser);
+		cp.add(chooser1);
+		cp.add(scrollPane);
+
+		textArea.setEditable(false);
 		chooser1.setVisible(false);
 		chooser.setVisible(false);
 		myFrame.setVisible(true);
@@ -112,61 +120,18 @@ public class M3UListApp {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				String actionCommand = e.getActionCommand();
-
+				StringBuffer sb = new StringBuffer();
+				chooser1.setVisible(false);
 				if (actionCommand.equals(JFileChooser.APPROVE_SELECTION)) {
-					StringBuffer sb = new StringBuffer();
 					File file = chooser1.getSelectedFile();
-					File[] dosyalar = file.listFiles();
-					Tag tag = null;
-					for (int i = 0; i < dosyalar.length; i++) {
-						File mp3File = dosyalar[i];
-						if (mp3File.isFile() && mp3File.getName().toLowerCase().endsWith(".mp3")) {
-							String line = mp3File.getAbsolutePath();
-							String oldStr = line;
-							if (line.indexOf("  ") > 0 || (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))) {
-
-								if (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))
-									line = line.replaceAll("-", " - ");
-								if (line.indexOf("  ") > 0)
-									line = line.replaceAll("  ", " ");
-								if (line.equals(oldStr) == false) {
-									System.err.println(mp3File.getAbsolutePath() + " boşluk " + line + " düzenlendi!");
-									mp3File.renameTo(new File(line));
-									mp3File = new File(line);
-								}
-							}
-							try {
-								AudioFile audioFile = AudioFileIO.read(mp3File);
-								tag = audioFile.getTag();
-								String dosyaAdi = "";
-								String mp3Adi = mp3File.getName();
-								mp3Adi = mp3Adi.substring(0, mp3Adi.lastIndexOf("."));
-								if (tag != null) {
-									String sarkiAdi = tag.getFirst(FieldKey.TITLE);
-									String sanatci = tag.getFirst(FieldKey.ARTIST);
-									// String album = tag.getFirst(FieldKey.ALBUM);
-									// String yil = tag.getFirst(FieldKey.YEAR);
-									// String janr = tag.getFirst(FieldKey.GENRE);
-									dosyaAdi = sanatci.trim() + " - " + sarkiAdi.trim();
-									if (dosyaAdi.equals(mp3Adi) == false) {
-										String str = oldStr + " --> " + dosyaAdi;
-										sb.append(str + "\n");
-										// System.err.println(str);
-
-									}
-								}
-							} catch (Exception e2) {
-								// TODO: handle exception
-							}
-						}
-					}
+					mp3KontrolEt(file, sb);
 					if (sb.length() > 0) {
 						textArea.setText(sb.toString());
 						textArea.setVisible(true);
 					}
-					sb = null;
 				}
-				chooser1.setVisible(false);
+				sb = null;
+
 				btn1.setVisible(true);
 			}
 		});
@@ -501,10 +466,7 @@ public class M3UListApp {
 						}
 
 					}
-					if (sb.length() > 0) {
-						textArea.append(sb.toString());
-						textArea.setVisible(true);
-					}
+
 					sb = null;
 				}
 
@@ -512,5 +474,60 @@ public class M3UListApp {
 
 			}
 		});
+	}
+
+	/**
+	 * @param klasor
+	 * @param label
+	 * @param sb
+	 */
+	private static void mp3KontrolEt(File klasor, StringBuffer sb) {
+		File[] dosyalar = klasor != null ? klasor.listFiles() : null;
+		if (dosyalar != null) {
+
+			Tag tag = null;
+			for (int i = 0; i < dosyalar.length; i++) {
+				File mp3File = dosyalar[i];
+				if (mp3File.isDirectory()) {
+					mp3KontrolEt(mp3File, sb);
+				} else if (mp3File.isFile() && mp3File.getName().toLowerCase().endsWith(".mp3")) {
+					String line = mp3File.getAbsolutePath();
+					String oldStr = line;
+					if (line.indexOf(" .") > 0 || line.indexOf("  ") > 0 || (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))) {
+						if (line.indexOf(" .") > 0)
+							System.err.println(line + " boşluk at");
+						if (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))
+							line = line.replaceAll("-", " - ");
+						while (line.indexOf("  ") > 0)
+							line = line.replaceAll("  ", " ");
+						if (line.equals(oldStr) == false) {
+							System.err.println(mp3File.getAbsolutePath() + " boşluk " + line + " düzenlendi!");
+							mp3File.renameTo(new File(line));
+							mp3File = new File(line);
+						}
+					}
+					try {
+						AudioFile audioFile = AudioFileIO.read(mp3File);
+						tag = audioFile.getTag();
+						String dosyaAdi = "";
+						String mp3Adi = mp3File.getName();
+						mp3Adi = mp3Adi.substring(0, mp3Adi.lastIndexOf("."));
+						if (tag != null) {
+							String sarkiAdi = tag.getFirst(FieldKey.TITLE);
+							String sanatci = tag.getFirst(FieldKey.ARTIST);
+							dosyaAdi = sanatci.trim() + " - " + sarkiAdi.trim();
+							if (dosyaAdi.equals(mp3Adi) == false) {
+								String str = oldStr + " --> " + dosyaAdi;
+								sb.append(str + "\n");
+								// System.err.println(str);
+
+							}
+						}
+					} catch (Exception e2) {
+
+					}
+				}
+			}
+		}
 	}
 }
