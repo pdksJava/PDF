@@ -229,7 +229,7 @@ public class M3UListApp {
 										}
 									}
 								} else
-									sb.append(gercekStr + " dosya yok!");
+									sb.append(gercekStr + " dosya yok!\n");
 							}
 
 						} else
