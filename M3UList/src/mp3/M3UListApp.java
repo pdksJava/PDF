@@ -527,8 +527,7 @@ public class M3UListApp {
 									continue;
 								}
 								if (deger != null && deger.trim().length() > 0) {
-
-									if (alan.equals(FieldKey.TITLE) == false && alan.equals(FieldKey.ARTIST) == false && alan.equals(FieldKey.ALBUM_ARTIST) == false && alan.equals(FieldKey.ALBUM) == false) {
+									if (alan.equals(FieldKey.LYRICS) == false && alan.equals(FieldKey.TITLE) == false && alan.equals(FieldKey.ARTIST) == false && alan.equals(FieldKey.ALBUM_ARTIST) == false && alan.equals(FieldKey.ALBUM) == false) {
 										fieldGuncelleMap.put(alan, "");
 									}
 								}
@@ -548,7 +547,7 @@ public class M3UListApp {
 											sarkiAdi = dizi[1].trim();
 											if (sarkiAdi.equals("") == false)
 												fieldGuncelleMap.put(FieldKey.TITLE, sarkiAdi);
- 										}
+										}
 
 									} catch (Exception e2) {
 
@@ -563,13 +562,12 @@ public class M3UListApp {
 							if (fieldGuncelleMap.isEmpty() == false) {
 								String str = oldStr + " --> ";
 								for (FieldKey fieldKey : fieldGuncelleMap.keySet()) {
-									if (fieldKey.equals(FieldKey.COMMENT)) {
+									String deger = fieldGuncelleMap.get(fieldKey);
+									if (fieldKey.equals(FieldKey.COMMENT))
 										tag.deleteField(fieldKey);
-									} else {
-										String deger = fieldGuncelleMap.get(fieldKey);
-										str += "\n" + fieldKey.name() + " = '" + deger + "'";
-										tag.setField(fieldKey, deger);
-									}
+									else
+ 										tag.setField(fieldKey, deger);
+ 									str += "\n" + fieldKey.name() + " = '" + deger + "'";
 								}
 
 								audioFile.commit();
