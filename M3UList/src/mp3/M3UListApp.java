@@ -561,9 +561,16 @@ public class M3UListApp {
 									fieldGuncelleMap.put(FieldKey.ALBUM_ARTIST, sanatci);
 							}
 							if (fieldGuncelleMap.isEmpty() == false) {
-								for (FieldKey fieldKey : fieldGuncelleMap.keySet())
-									tag.setField(fieldKey, fieldGuncelleMap.get(fieldKey));
+								String str = oldStr + " --> ";
+								for (FieldKey fieldKey : fieldGuncelleMap.keySet()) {
+									String deger = fieldGuncelleMap.get(fieldKey);
+									str += "\n" + fieldKey.name() + " = '" + deger + "'";
+									tag.setField(fieldKey, deger);
+
+								}
+
 								audioFile.commit();
+								System.out.println(str);
 								if (sanatci.equals("") == false && sarkiAdi.equals("") == false)
 									dosyaAdi = sanatci.trim() + " - " + sarkiAdi.trim();
 
