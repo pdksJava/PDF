@@ -3,10 +3,15 @@ package mp3;
 import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
@@ -18,6 +23,8 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -32,8 +39,11 @@ import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
+import org.jaudiotagger.tag.datatype.Artwork;
 
 public class M3UListApp {
+
+	static String rootAdres = "https://api.lyrics.ovh";
 
 	public static void main(String[] args) {
 		File[] roots = File.listRoots();
@@ -124,6 +134,11 @@ public class M3UListApp {
 				StringBuffer sb = new StringBuffer();
 				chooser1.setVisible(false);
 				if (actionCommand.equals(JFileChooser.APPROVE_SELECTION)) {
+					System.setProperty("https.protocols", "TLSv1.2,TLSv1.1,TLSv1");
+					try {
+						SSLImport.getCertificateInputStream(rootAdres);
+					} catch (Exception e1) {
+					}
 					File file = chooser1.getSelectedFile();
 					mp3KontrolEt(file, sb);
 					if (sb.length() > 0) {
@@ -478,6 +493,42 @@ public class M3UListApp {
 	}
 
 	/**
+	 * @param artist
+	 * @param title
+	 * @return
+	 */
+	protected static String searchLyricsOnline(String artist, String title) {
+		StringBuilder content = new StringBuilder();
+		try {
+			String characterEncoding = StandardCharsets.UTF_8.toString();
+			SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+			sslContext.init(null, null, new java.security.SecureRandom());
+			HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+			String adres = String.format(rootAdres + "/v1/%s/%s", URLEncoder.encode(artist, characterEncoding), URLEncoder.encode(title, characterEncoding));
+			URL url = new URL(adres);
+
+			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("GET");
+
+			int responseCode = connection.getResponseCode();
+			System.out.println("Response Code: " + responseCode);
+
+			BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			String inputLine;
+
+			while ((inputLine = in.readLine()) != null) {
+				content.append(inputLine);
+			}
+			in.close();
+			connection.disconnect();
+		} catch (Exception e) {
+
+		}
+
+		return content.toString();
+	}
+
+	/**
 	 * @param klasor
 	 * @param label
 	 * @param sb
@@ -515,6 +566,9 @@ public class M3UListApp {
 						String mp3Adi = mp3File.getName();
 						mp3Adi = mp3Adi.substring(0, mp3Adi.lastIndexOf("."));
 						if (tag != null) {
+							List<Artwork> list = tag.getArtworkList();
+							if (list != null && list.isEmpty())
+								list = null;
 							fieldGuncelleMap.clear();
 							String sarkiAdi = tag.getFirst(FieldKey.TITLE);
 							String sanatci = tag.getFirst(FieldKey.ARTIST);
@@ -540,7 +594,7 @@ public class M3UListApp {
 										if (sanatci.equals("")) {
 											sanatci = dizi[0].trim();
 											if (sanatci.equals("") == false)
-												fieldGuncelleMap.put(FieldKey.ARTIST, sanatci);
+												fieldGuncelleMap.put(FieldKey.ALBUM_ARTIST, sanatci);
 
 										}
 										if (sarkiAdi.equals("")) {
@@ -555,21 +609,48 @@ public class M3UListApp {
 								}
 							}
 							if (sanatci.equals("") == false) {
-								String albumSanatci = tag.getFirst(FieldKey.ALBUM_ARTIST);
+								String albumSanatci = tag.getFirst(FieldKey.ARTIST);
 								if (albumSanatci.trim().equals(""))
-									fieldGuncelleMap.put(FieldKey.ALBUM_ARTIST, sanatci);
+									fieldGuncelleMap.put(FieldKey.ARTIST, sanatci);
 							}
-							if (fieldGuncelleMap.isEmpty() == false) {
+							if (sarkiAdi.equals("") == false) {
+								String album = tag.getFirst(FieldKey.ALBUM);
+								if (album.trim().equals(""))
+									fieldGuncelleMap.put(FieldKey.ALBUM, sarkiAdi);
+							}
+							if (sanatci.equals("") == false && sarkiAdi.equals("") == false) {
+								String lyrics = tag.getFirst(FieldKey.LYRICS);
+								if (lyrics == null || lyrics.trim().length() == 0) {
+									lyrics = searchLyricsOnline(sanatci, sarkiAdi);
+									if (lyrics.length() > 0)
+										fieldGuncelleMap.put(FieldKey.LYRICS, lyrics);
+								}
+							}
+							if (fieldGuncelleMap.isEmpty() == false || list != null) {
 								String str = oldStr + " --> ";
 								for (FieldKey fieldKey : fieldGuncelleMap.keySet()) {
 									String deger = fieldGuncelleMap.get(fieldKey);
-									if (fieldKey.equals(FieldKey.COMMENT))
+									if (fieldKey.equals(FieldKey.COMMENT)|| fieldKey.equals( FieldKey.COVER_ART))
 										tag.deleteField(fieldKey);
-									else
- 										tag.setField(fieldKey, deger);
- 									str += "\n" + fieldKey.name() + " = '" + deger + "'";
-								}
+									else {
+										if (deger.length() > 0) {
+											if (tag.hasField(fieldKey.name()) == false)
+												tag.createField(fieldKey, "");
+										}
+										try {
+											 
+											tag.setField(fieldKey, deger);
+											 
+										} catch (Exception e) {
+											System.err.println(fieldKey + " " + deger);
+										}
 
+									}
+
+									str += "\n" + fieldKey.name() + " = '" + deger + "'";
+								}
+								if (list != null)
+									tag.deleteArtworkField();
 								audioFile.commit();
 								System.out.println(str);
 								if (sanatci.equals("") == false && sarkiAdi.equals("") == false)
@@ -585,7 +666,8 @@ public class M3UListApp {
 							}
 						}
 					} catch (Exception e2) {
-
+						System.out.println(e2);
+						e2.printStackTrace();
 					}
 				}
 			}
