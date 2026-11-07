@@ -44,6 +44,7 @@ import org.jaudiotagger.tag.datatype.Artwork;
 public class M3UListApp {
 
 	static String rootAdres = "https://api.lyrics.ovh";
+	static Boolean sozAdresiAcik = null;
 
 	public static void main(String[] args) {
 		File[] roots = File.listRoots();
@@ -138,6 +139,7 @@ public class M3UListApp {
 					try {
 						SSLImport.getCertificateInputStream(rootAdres);
 					} catch (Exception e1) {
+						sozAdresiAcik = false;
 					}
 					File file = chooser1.getSelectedFile();
 					mp3KontrolEt(file, sb);
@@ -512,7 +514,8 @@ public class M3UListApp {
 
 			int responseCode = connection.getResponseCode();
 			System.out.println("Response Code: " + responseCode);
-
+			if (sozAdresiAcik == null)
+				sozAdresiAcik = true;
 			BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 			String inputLine;
 
@@ -522,7 +525,7 @@ public class M3UListApp {
 			in.close();
 			connection.disconnect();
 		} catch (Exception e) {
-
+			sozAdresiAcik = false;
 		}
 
 		return content.toString();
@@ -618,19 +621,21 @@ public class M3UListApp {
 								if (album.trim().equals(""))
 									fieldGuncelleMap.put(FieldKey.ALBUM, sarkiAdi);
 							}
-							if (sanatci.equals("") == false && sarkiAdi.equals("") == false) {
-								String lyrics = tag.getFirst(FieldKey.LYRICS);
-								if (lyrics == null || lyrics.trim().length() == 0) {
-									lyrics = searchLyricsOnline(sanatci, sarkiAdi);
-									if (lyrics.length() > 0)
-										fieldGuncelleMap.put(FieldKey.LYRICS, lyrics);
+							if (sozAdresiAcik == null || sozAdresiAcik) {
+								if (sanatci.equals("") == false && sarkiAdi.equals("") == false) {
+									String lyrics = tag.getFirst(FieldKey.LYRICS);
+									if (lyrics == null || lyrics.trim().length() == 0) {
+										lyrics = searchLyricsOnline(sanatci, sarkiAdi);
+										if (lyrics.length() > 0)
+											fieldGuncelleMap.put(FieldKey.LYRICS, lyrics);
+									}
 								}
 							}
 							if (fieldGuncelleMap.isEmpty() == false || list != null) {
 								String str = oldStr + " --> ";
 								for (FieldKey fieldKey : fieldGuncelleMap.keySet()) {
 									String deger = fieldGuncelleMap.get(fieldKey);
-									if (fieldKey.equals(FieldKey.COMMENT)|| fieldKey.equals( FieldKey.COVER_ART))
+									if (fieldKey.equals(FieldKey.COMMENT) || fieldKey.equals(FieldKey.COVER_ART))
 										tag.deleteField(fieldKey);
 									else {
 										if (deger.length() > 0) {
@@ -638,9 +643,9 @@ public class M3UListApp {
 												tag.createField(fieldKey, "");
 										}
 										try {
-											 
+
 											tag.setField(fieldKey, deger);
-											 
+
 										} catch (Exception e) {
 											System.err.println(fieldKey + " " + deger);
 										}
