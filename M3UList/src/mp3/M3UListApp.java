@@ -37,9 +37,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
+import org.jaudiotagger.audio.exceptions.InvalidAudioFrameException;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.datatype.Artwork;
+
+import com.mpatric.mp3agic.ID3v2;
+import com.mpatric.mp3agic.Mp3File;
 
 public class M3UListApp {
 
@@ -540,8 +544,8 @@ public class M3UListApp {
 		File[] dosyalar = klasor != null ? klasor.listFiles() : null;
 		if (dosyalar != null) {
 			FieldKey[] alanlar = FieldKey.values();
-			HashMap<FieldKey, String> fieldGuncelleMap = new HashMap<FieldKey, String>();
-			Tag tag = null;
+			HashMap<Object, String> fieldGuncelleMap = new HashMap<Object, String>();
+
 			for (int i = 0; i < dosyalar.length; i++) {
 				File mp3File = dosyalar[i];
 				if (mp3File.isDirectory()) {
@@ -562,19 +566,25 @@ public class M3UListApp {
 							mp3File = new File(line);
 						}
 					}
+
+					String dosyaAdi = "";
+					String mp3Adi = mp3File.getName();
+					mp3Adi = mp3Adi.substring(0, mp3Adi.lastIndexOf("."));
+					AudioFile audioFile = null;
+					String sarkiAdi = "";
+					String sanatci = "";
+					String[] dizi = mp3Adi.split("-");
 					try {
-						AudioFile audioFile = AudioFileIO.read(mp3File);
-						tag = audioFile.getTag();
-						String dosyaAdi = "";
-						String mp3Adi = mp3File.getName();
-						mp3Adi = mp3Adi.substring(0, mp3Adi.lastIndexOf("."));
+						fieldGuncelleMap.clear();
+						audioFile = AudioFileIO.read(mp3File);
+						Tag tag = audioFile.getTag();
 						if (tag != null) {
 							List<Artwork> list = tag.getArtworkList();
 							if (list != null && list.isEmpty())
 								list = null;
-							fieldGuncelleMap.clear();
-							String sarkiAdi = tag.getFirst(FieldKey.TITLE);
-							String sanatci = tag.getFirst(FieldKey.ARTIST);
+
+							sarkiAdi = tag.getFirst(FieldKey.TITLE);
+							sanatci = tag.getFirst(FieldKey.ARTIST);
 							for (int j = 0; j < alanlar.length; j++) {
 								FieldKey alan = alanlar[j];
 								String deger = null;
@@ -591,7 +601,7 @@ public class M3UListApp {
 							}
 							dosyaAdi = sanatci.trim() + " - " + sarkiAdi.trim();
 							if (sanatci.equals("") || sarkiAdi.equals("")) {
-								String[] dizi = mp3Adi.split("-");
+
 								if (dizi.length == 2 && mp3Adi.indexOf("-") == mp3Adi.lastIndexOf("-")) {
 									try {
 										if (sanatci.equals("")) {
@@ -633,7 +643,9 @@ public class M3UListApp {
 							}
 							if (fieldGuncelleMap.isEmpty() == false || list != null) {
 								String str = oldStr + " --> ";
-								for (FieldKey fieldKey : fieldGuncelleMap.keySet()) {
+								for (Iterator iterator = fieldGuncelleMap.keySet().iterator(); iterator.hasNext();) {
+									FieldKey fieldKey = (FieldKey) iterator.next();
+
 									String deger = fieldGuncelleMap.get(fieldKey);
 									if (fieldKey.equals(FieldKey.COMMENT) || fieldKey.equals(FieldKey.COVER_ART))
 										tag.deleteField(fieldKey);
@@ -663,17 +675,107 @@ public class M3UListApp {
 
 							}
 
-							if (dosyaAdi.equals(mp3Adi) == false) {
-								String str = oldStr + " --> " + dosyaAdi;
-								sb.append(str + "\n");
-								// System.err.println(str);
+						}
+					} catch (InvalidAudioFrameException e2) {
+
+						// Jaudiotagger ses karelerini bulamadı ama dosya aslında çalınabilir olabilir.
+						// sb.append("Başlık bulunamadı (Dosya yapısı standart dışı) : " + oldStr + "\n");
+						// Buraya alternatif bir okuma yöntemi koyabilir veya dosyayı "Bozuklar" listesine ekleyebilirsiniz.
+
+					} catch (Exception e2) {
+						sb.append(e2 + "\n");
+					}
+					Mp3File mp3file = null;
+					if (audioFile == null) {
+						try {
+							mp3file = new Mp3File(mp3File.getAbsolutePath(), 8192, false);
+							if (mp3file.hasId3v2Tag()) {
+								ID3v2 id3v2Tag = mp3file.getId3v2Tag();
+
+								sanatci = id3v2Tag.getArtist() != null ? id3v2Tag.getArtist().trim() : "";
+								sarkiAdi = id3v2Tag.getTitle() != null ? id3v2Tag.getTitle().trim() : "";
+								if (id3v2Tag.getAlbumImage() != null)
+									fieldGuncelleMap.put(FieldKey.COVER_ART, id3v2Tag.getAlbumImageMimeType());
+								if (sanatci.equals("") || sarkiAdi.equals("")) {
+									if (dizi.length == 2 && mp3Adi.indexOf("-") == mp3Adi.lastIndexOf("-")) {
+										try {
+											if (sanatci.equals("")) {
+												sanatci = dizi[0].trim();
+												if (sanatci.equals("") == false)
+													fieldGuncelleMap.put(FieldKey.ALBUM_ARTIST, sanatci);
+
+											}
+											if (sarkiAdi.equals("")) {
+												sarkiAdi = dizi[1].trim();
+												if (sarkiAdi.equals("") == false)
+													fieldGuncelleMap.put(FieldKey.TITLE, sarkiAdi);
+											}
+
+										} catch (Exception e2) {
+
+										}
+									}
+								}
+								if (sanatci.equals("") == false) {
+									String albumSanatci = id3v2Tag.getAlbumArtist() != null ? id3v2Tag.getAlbumArtist().trim() : "";
+									if (albumSanatci.trim().equals(""))
+										fieldGuncelleMap.put(FieldKey.ARTIST, sanatci);
+								}
+								if (sarkiAdi.equals("") == false) {
+									String album = id3v2Tag.getAlbum() != null ? id3v2Tag.getAlbum().trim() : "";
+									if (album.trim().equals(""))
+										fieldGuncelleMap.put(FieldKey.ALBUM, sarkiAdi);
+								}
+
+								if (fieldGuncelleMap.isEmpty() == false) {
+									String str = oldStr + " --> ";
+									for (Iterator iterator = fieldGuncelleMap.keySet().iterator(); iterator.hasNext();) {
+										FieldKey fieldKey = (FieldKey) iterator.next();
+										String deger = fieldGuncelleMap.get(fieldKey);
+										if (fieldKey.equals(FieldKey.COVER_ART))
+											id3v2Tag.clearAlbumImage();
+										else {
+											if (fieldKey.equals(FieldKey.ALBUM))
+												id3v2Tag.setAlbum(deger);
+											else if (fieldKey.equals(FieldKey.TITLE))
+												id3v2Tag.setTitle(deger);
+											else if (fieldKey.equals(FieldKey.ARTIST))
+												id3v2Tag.setArtist(deger);
+											else if (fieldKey.equals(FieldKey.ALBUM_ARTIST))
+												id3v2Tag.setAlbumArtist(deger);
+										}
+
+										str += "\n" + fieldKey.name() + " = '" + deger + "'";
+									}
+									String tempPath = mp3File.getAbsolutePath() + ".tmp";
+									mp3file.save(tempPath);
+									File tempFile = new File(tempPath);
+									if (mp3File.delete()) {
+										if (tempFile.renameTo(mp3File)) {
+											System.out.println(str);
+										} else {
+											System.err.println("Hata: Geçici dosya adı orijinal dosya adıyla değiştirilemedi.");
+										}
+									}
+
+								}
+								if (sanatci.equals("") == false && sarkiAdi.equals("") == false)
+									dosyaAdi = sanatci.trim() + " - " + sarkiAdi.trim();
 
 							}
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							sb.append(e.getMessage() + " --> " + oldStr + "\n");
 						}
-					} catch (Exception e2) {
-						System.out.println(e2);
-						e2.printStackTrace();
 					}
+					if (audioFile != null || mp3file != null)
+						if (dosyaAdi.equals(mp3Adi) == false) {
+
+							String str = oldStr + " --> " + dosyaAdi;
+							sb.append(str + "\n");
+							// System.err.println(str);
+
+						}
 				}
 			}
 		}
