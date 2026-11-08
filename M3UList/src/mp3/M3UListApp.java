@@ -46,7 +46,7 @@ import com.mpatric.mp3agic.ID3v2;
 import com.mpatric.mp3agic.Mp3File;
 
 public class M3UListApp {
-	
+
 	static Logger logger = Logger.getLogger("mp3.M3UListApp");
 	static String rootAdres = "https://api.lyrics.ovh";
 	static Boolean sozAdresiAcik = null;
@@ -60,7 +60,7 @@ public class M3UListApp {
 				rootStr = root.getPath();
 
 		}
-		 
+
 		Logger.getLogger("com.mpatric.mp3agic").setLevel(Level.OFF);
 		Logger.getLogger("org.jaudiotagger").setLevel(Level.OFF);
 		final JFrame myFrame = new JFrame();
@@ -649,7 +649,7 @@ public class M3UListApp {
 									FieldKey fieldKey = (FieldKey) iterator.next();
 
 									String deger = fieldGuncelleMap.get(fieldKey);
-									if (fieldKey.equals(FieldKey.COMMENT) || fieldKey.equals(FieldKey.COVER_ART))
+									if (fieldKey.equals(FieldKey.COMMENT) || fieldKey.equals(FieldKey.COVER_ART) || fieldKey.equals(FieldKey.DISC_NO) || fieldKey.equals(FieldKey.DISC_TOTAL))
 										tag.deleteField(fieldKey);
 									else {
 										if (deger.length() > 0) {
