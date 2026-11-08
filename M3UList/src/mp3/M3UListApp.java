@@ -556,8 +556,11 @@ public class M3UListApp {
 					String line = mp3File.getAbsolutePath();
 					String oldStr = line;
 					if (line.indexOf(" .") > 0 || line.indexOf("  ") > 0 || (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))) {
-						if (line.indexOf(" .") > 0)
-							System.err.println(line + " boþluk at");
+						if (line.indexOf(" .") > 0) {
+							line = Util.replaceAllManuel(oldStr, " .", ".");
+							// System.err.println(line + " boþluk at");
+						}
+
 						if (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))
 							line = line.replaceAll("-", " - ");
 						while (line.indexOf("  ") > 0)
