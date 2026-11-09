@@ -556,7 +556,7 @@ public class M3UListApp {
 			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"))) {
 				String line;
 				while ((line = reader.readLine()) != null) {
-					System.out.println("[FFmpeg] " + line);
+					System.out.println("FFmpeg : " + line);
 				}
 			}
 
@@ -592,12 +592,12 @@ public class M3UListApp {
 					String line = mp3File.getAbsolutePath();
 					String oldStr = line;
 					if (line.indexOf(" .") > 0 || line.indexOf("  ") > 0 || (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))) {
-						if (line.indexOf(" .") > 0)
-							System.err.println(line + " boşluk at");
 						if (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))
 							line = line.replaceAll("-", " - ");
 						while (line.indexOf("  ") > 0)
 							line = line.replaceAll("  ", " ");
+						if (line.indexOf(" .") > 0)
+							line = Util.replaceAllManuel(line, " .", ".");
 						if (line.equals(oldStr) == false) {
 							System.err.println(mp3File.getAbsolutePath() + " boşluk " + line + " düzenlendi!");
 							mp3File.renameTo(new File(line));
