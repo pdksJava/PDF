@@ -59,7 +59,8 @@ public class M3UListApp {
 				rootStr = root.getPath();
 
 		}
-
+		System.setProperty("https.protocols", "TLSv1.2");
+		System.setProperty("jdk.tls.client.protocols", "TLSv1.2");
 		Logger.getLogger("com.mpatric.mp3agic").setLevel(Level.OFF);
 		Logger.getLogger("org.jaudiotagger").setLevel(Level.OFF);
 		final JFrame myFrame = new JFrame();
@@ -512,7 +513,6 @@ public class M3UListApp {
 			sslContext.init(null, null, new java.security.SecureRandom());
 			HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
 			String adres = String.format(rootAdres + "/v1/%s/%s", URLEncoder.encode(artist, characterEncoding), URLEncoder.encode(title, characterEncoding));
-			SSLImport.kokSertifikaImport();
 			URL url = new URL(adres);
 
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
