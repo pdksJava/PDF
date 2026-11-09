@@ -37,7 +37,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
-import org.jaudiotagger.audio.exceptions.InvalidAudioFrameException;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.datatype.Artwork;
@@ -46,7 +45,7 @@ import com.mpatric.mp3agic.ID3v2;
 import com.mpatric.mp3agic.Mp3File;
 
 public class M3UListApp {
-	
+
 	static Logger logger = Logger.getLogger("mp3.M3UListApp");
 	static String rootAdres = "https://api.lyrics.ovh";
 	static Boolean sozAdresiAcik = null;
@@ -60,7 +59,7 @@ public class M3UListApp {
 				rootStr = root.getPath();
 
 		}
-		 
+
 		Logger.getLogger("com.mpatric.mp3agic").setLevel(Level.OFF);
 		Logger.getLogger("org.jaudiotagger").setLevel(Level.OFF);
 		final JFrame myFrame = new JFrame();
@@ -538,6 +537,43 @@ public class M3UListApp {
 	}
 
 	/**
+	 * @param inputFilePath
+	 * @param outputFilePath
+	 *            setx /M PATH "%PATH%;C:\Program Files\Wondershare\UniConverter"
+	 */
+	protected static void convertToMp3(String inputFilePath, String outputFilePath) {
+		// FFmpeg komutunu argüman dizisi olarak hazırlıyoruz
+		ProcessBuilder processBuilder = new ProcessBuilder("C:\\Program Files\\Wondershare\\UniConverter\\ffmpeg.exe", "-i", inputFilePath, "-codec:a", "libmp3lame", "-qscale:a", "2", outputFilePath);
+
+		// Hata akışını standart çıktı ile birleştiriyoruz (Java 7 destekler)
+		processBuilder.redirectErrorStream(true);
+
+		try {
+			// İşlemi başlat
+			Process process = processBuilder.start();
+
+			// Java 7'nin "try-with-resources" özelliği ile akışı güvenli bir şekilde kapatıyoruz
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					System.out.println("[FFmpeg] " + line);
+				}
+			}
+
+			// İşlemin tamamlanmasını bekle ve çıkış kodunu al
+			int exitCode = process.waitFor();
+			if (exitCode == 0) {
+				System.out.println("Başarılı! MP3 dosyası oluşturuldu: " + outputFilePath);
+			} else {
+				System.err.println("Dönüştürme başarısız oldu. Çıkış kodu: " + exitCode);
+			}
+
+		} catch (Exception e) {
+			System.err.println("G/Ç Hatası. FFmpeg bilgisayarınızda kurulu ve PATH'e ekli mi? Detay: " + e.getMessage());
+		}
+	}
+
+	/**
 	 * @param klasor
 	 * @param label
 	 * @param sb
@@ -579,7 +615,30 @@ public class M3UListApp {
 					try {
 						fieldGuncelleMap.clear();
 						audioFile = AudioFileIO.read(mp3File);
-						Tag tag = audioFile.getTag();
+					} catch (Exception e) {
+						audioFile = null;
+					}
+					try {
+						if (audioFile == null) {
+							String newStr = oldStr.substring(0, oldStr.lastIndexOf(".")) + "_new.mp3";
+							convertToMp3(oldStr, newStr);
+							File yeniDosya = new File(newStr);
+							if (yeniDosya.exists()) {
+								if (mp3File.delete()) {
+									if (yeniDosya.renameTo(mp3File)) {
+										audioFile = AudioFileIO.read(mp3File);
+									}
+
+								}
+							}
+						}
+					} catch (Exception e) {
+						// TODO: handle exception
+					}
+
+					try {
+
+						Tag tag = audioFile != null ? audioFile.getTag() : null;
 						if (tag != null) {
 							List<Artwork> list = tag.getArtworkList();
 							if (list != null && list.isEmpty())
@@ -678,11 +737,6 @@ public class M3UListApp {
 							}
 
 						}
-					} catch (InvalidAudioFrameException e2) {
-
-						// Jaudiotagger ses karelerini bulamadı ama dosya aslında çalınabilir olabilir.
-						// sb.append("Başlık bulunamadı (Dosya yapısı standart dışı) : " + oldStr + "\n");
-						// Buraya alternatif bir okuma yöntemi koyabilir veya dosyayı "Bozuklar" listesine ekleyebilirsiniz.
 
 					} catch (Exception e2) {
 						sb.append(e2 + "\n");
