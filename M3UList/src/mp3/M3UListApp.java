@@ -69,9 +69,9 @@ public class M3UListApp {
 		myFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		myFrame.setLocationRelativeTo(null);
 		final JFileChooser chooser = new JFileChooser(rootStr);
-		final JButton btn = new JButton("Ã‡alma Listesi seÃ§");
+		final JButton btn = new JButton("Çalma Listesi seç");
 		final JFileChooser chooser1 = new JFileChooser(rootStr);
-		final JButton btn1 = new JButton("Mp3 KlasÃ¶r kontrol");
+		final JButton btn1 = new JButton("Mp3 Klasör kontrol");
 		final JCheckBox dosyaKontrol = new JCheckBox();
 		final JLabel baslik = new JLabel("Dosya Kontrol");
 		final JTextArea textArea = new JTextArea();
@@ -87,14 +87,14 @@ public class M3UListApp {
 		scrollPane.setVisible(true);
 		myFrame.setTitle("Mp3 Liste Kontrol");
 		myFrame.setSize(800, 600);
-		chooser.setDialogTitle("Dosya SeÃ§");
+		chooser.setDialogTitle("Dosya Seç");
 		chooser.setMultiSelectionEnabled(false);
 		chooser.setFileFilter(new FileNameExtensionFilter("MP3 List Dosya", "m3u8"));
 		chooser.setLocale(Util.TR_LOCALE);
-		chooser.setApproveButtonText("SeÃ§");
-		chooser1.setDialogTitle("KlasÃ¶r SeÃ§");
+		chooser.setApproveButtonText("Seç");
+		chooser1.setDialogTitle("Klasör Seç");
 		chooser1.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		chooser1.setApproveButtonText("KlasÃ¶r SeÃ§");
+		chooser1.setApproveButtonText("Klasör Seç");
 
 		Container cp = myFrame.getContentPane();
 		cp.add(baslik);
@@ -281,7 +281,7 @@ public class M3UListApp {
 								int sira = 0;
 								maxAdet = 0;
 
-								System.out.println("iÅŸlem Adet : " + islemAdet + " " + new Date() + "\n");
+								System.out.println("işlem Adet : " + islemAdet + " " + new Date() + "\n");
 
 								for (Liste liste : listOrj) {
 									liste.setNumValue(sira);
@@ -435,7 +435,7 @@ public class M3UListApp {
 									devam = false;
 							} catch (Exception e2) {
 								e2.printStackTrace();
-								System.err.println("iÅŸlem Adet : " + islemAdet + " " + new Date() + "\n" + e2);
+								System.err.println("işlem Adet : " + islemAdet + " " + new Date() + "\n" + e2);
 							}
 							if (degisti == false || farkVar || islemAdet > 50) {
 								sb = new StringBuffer();
@@ -477,7 +477,7 @@ public class M3UListApp {
 
 									devam = !txt.exists();
 									if (devam == false) {
-										System.out.println(fileName + " oluÅŸtu.");
+										System.out.println(fileName + " oluştu.");
 										JOptionPane.showMessageDialog(null, fileName);
 									}
 								}
@@ -592,14 +592,17 @@ public class M3UListApp {
 					String line = mp3File.getAbsolutePath();
 					String oldStr = line;
 					if (line.indexOf(" .") > 0 || line.indexOf("  ") > 0 || (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))) {
-						if (line.indexOf(" .") > 0)
-							System.err.println(line + " boÅŸluk at");
+						if (line.indexOf(" .") > 0) {
+							line = Util.replaceAllManuel(oldStr, " .", ".");
+							// System.err.println(line + " boşluk at");
+						}
+
 						if (line.indexOf("-") > 0 && line.indexOf("-") == line.lastIndexOf("-"))
 							line = line.replaceAll("-", " - ");
 						while (line.indexOf("  ") > 0)
 							line = line.replaceAll("  ", " ");
 						if (line.equals(oldStr) == false) {
-							System.err.println(mp3File.getAbsolutePath() + " boÅŸluk " + line + " dÃ¼zenlendi!");
+							System.err.println(mp3File.getAbsolutePath() + " boşluk " + line + " düzenlendi!");
 							mp3File.renameTo(new File(line));
 							mp3File = new File(line);
 						}
@@ -708,7 +711,7 @@ public class M3UListApp {
 									FieldKey fieldKey = (FieldKey) iterator.next();
 
 									String deger = fieldGuncelleMap.get(fieldKey);
-									if (fieldKey.equals(FieldKey.COMMENT) || fieldKey.equals(FieldKey.COVER_ART))
+									if (fieldKey.equals(FieldKey.COMMENT) || fieldKey.equals(FieldKey.COVER_ART) || fieldKey.equals(FieldKey.DISC_NO) || fieldKey.equals(FieldKey.DISC_TOTAL))
 										tag.deleteField(fieldKey);
 									else {
 										if (deger.length() > 0) {
@@ -810,7 +813,7 @@ public class M3UListApp {
 										if (tempFile.renameTo(mp3File)) {
 											System.out.println(str);
 										} else {
-											System.err.println("Hata: GeÃ§ici dosya adÄ± orijinal dosya adÄ±yla deÄŸiÅŸtirilemedi.");
+											System.err.println("Hata: Geçici dosya adı orijinal dosya adıyla değiştirilemedi.");
 										}
 									}
 
