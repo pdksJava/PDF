@@ -184,7 +184,7 @@ public class SSLImport implements Serializable {
 			try {
 				ksCrt = ks.getCertificate(alias);
 			} catch (Exception e) {
-			}
+ 			}
 			boolean devam = ksCrt == null;
 			if (ksCrt != null) {
 				X509Certificate x509Certificate = (X509Certificate) ksCrt;
@@ -288,7 +288,7 @@ public class SSLImport implements Serializable {
 	/**
 	 * @throws Exception
 	 */
-	private static void kokSertifikaImport() throws Exception {
+	public static void kokSertifikaImport() throws Exception {
 		File root = new File("/opt/sertifika");
 		if (root.exists() && root.isDirectory()) {
 			File[] dirs = root.listFiles();
