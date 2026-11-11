@@ -39,6 +39,10 @@ import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.datatype.Artwork;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import com.google.gson.Gson;
 import com.mpatric.mp3agic.ID3v2;
@@ -47,9 +51,13 @@ import com.mpatric.mp3agic.Mp3File;
 public class M3UListApp {
 
 	static Logger logger = Logger.getLogger("mp3.M3UListApp");
-	static String rootAdres = "https://api.lyrics.ovh";
+	static String lrclibAdres = "https://lrclib.net";
+	static String lyricsRootAdres = "https://api.lyrics.ovh";
+	static String geniusRootAdres = "https://genius.com";
+
 	static Boolean sozAdresiAcik = null;
 	static Gson gson = new Gson();
+	static final String ACCESS_TOKEN = "YOUR_GENIUS_ACCESS_TOKEN";
 
 	public static void main(String[] args) {
 		File[] roots = File.listRoots();
@@ -144,7 +152,15 @@ public class M3UListApp {
 				if (actionCommand.equals(JFileChooser.APPROVE_SELECTION)) {
 					System.setProperty("https.protocols", "TLSv1.2,TLSv1.1,TLSv1");
 					try {
-						SSLImport.getCertificateInputStream(rootAdres);
+						SSLImport.getCertificateInputStream(lrclibAdres);
+
+					} catch (Exception e1) {
+						sozAdresiAcik = false;
+					}
+					try {
+
+						SSLImport.getCertificateInputStream(geniusRootAdres);
+
 					} catch (Exception e1) {
 						sozAdresiAcik = false;
 					}
@@ -508,51 +524,62 @@ public class M3UListApp {
 	}
 
 	/**
-	 * @param artist
-	 * @param title
+	 * @param sanatci
+	 * @param sarkiAdi
 	 * @return
 	 */
-	protected static String searchLyricsOnline(String artist, String title) {
-		String content = "";
+	public static String getSongUrl(String sanatci, String sarkiAdi) {
+		String gercekSozler = "";
+
 		try {
-			String characterEncoding = StandardCharsets.UTF_8.toString();
-			SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
-			sslContext.init(null, null, new java.security.SecureRandom());
-			HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
-			String adres = String.format(rootAdres + "/v1/%s/%s", URLEncoder.encode(artist.trim(), characterEncoding), URLEncoder.encode(title.trim(), characterEncoding));
-			URL url = new URL(adres);
-			HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
-			connection.setRequestMethod("GET");
 
-			int responseCode = connection.getResponseCode();
-			// System.out.println("Response Code: " + responseCode);
+			// Türkçe şarkıları sorunsuz bulan kararlı küresel servis: LRCLIB API
+			String urlStr = lrclibAdres + "/api/get" + "?artist_name=" + java.net.URLEncoder.encode(sanatci, "UTF-8") + "&track_name=" + java.net.URLEncoder.encode(sarkiAdi, "UTF-8");
 
-			BufferedReader in = new BufferedReader(new InputStreamReader(responseCode == 200 ? connection.getInputStream() : connection.getErrorStream()));
-			String inputLine;
-			StringBuilder sb = new StringBuilder();
-			while ((inputLine = in.readLine()) != null) {
-				sb.append(inputLine);
+			java.net.URL url = new java.net.URL(urlStr);
+			java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+			conn.setRequestMethod("GET");
+
+			// Bot engeline takılmamak için uygulamamızı tanıtıyoruz
+			conn.setRequestProperty("User-Agent", "M3UListApp/1.0");
+			conn.setRequestProperty("Accept", "application/json");
+			conn.setConnectTimeout(8000);
+			conn.setReadTimeout(8000);
+
+			if (conn.getResponseCode() == 200) {
+				java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+				StringBuilder response = new StringBuilder();
+				String inputLine;
+
+				while ((inputLine = in.readLine()) != null) {
+					response.append(inputLine);
+				}
+				in.close();
+
+				String jsonResponse = response.toString();
+
+				// Gelen JSON verisindeki düz metin şarkı sözü ("plainLyrics") alanını süzüyoruz
+				if (jsonResponse.contains("\"plainLyrics\":\"")) {
+					int start = jsonResponse.indexOf("\"plainLyrics\":\"") + 15;
+					int end = jsonResponse.indexOf("\"", start);
+
+					if (end > start) {
+						String rawLyrics = jsonResponse.substring(start, end);
+
+						// JSON formatındaki \n gibi kaçış karakterlerini Java'ya uyarlıyoruz
+						gercekSozler = rawLyrics.replace("\\n", "\n").replace("\\r", "").replace("\\\"", "\"").trim();
+						System.out.println("[ " + sanatci + " - " + sarkiAdi + " ]\n" + gercekSozler);
+					}
+				}
 			}
-			in.close();
-			connection.disconnect();
-			if (sb != null) {
-				if (sozAdresiAcik == null)
-					sozAdresiAcik = true;
-				LinkedHashMap<String, Object> map = gson.fromJson(sb.toString(), LinkedHashMap.class);
-				if (map.containsKey("lyrics")) {
-					content = new StringBuilder(map.get("lyrics").toString()).toString();
-					System.out.println("[ " + artist + " - " + title + " ]\n" + content);
-				} else
-					System.err.println("[ " + artist + " - " + title + " ] söz yok!");
-
-				map = null;
-			}
-			sb = null;
 		} catch (Exception e) {
-			sozAdresiAcik = false;
+			e.printStackTrace();
+			gercekSozler = "Bağlantı hatası: " + e.getMessage();
 		}
+		if (gercekSozler == null || gercekSozler.equals(""))
+			System.err.println("[ " + sanatci + " - " + sarkiAdi + " ] sözleri bulunamadı!");
+		return gercekSozler;
 
-		return content;
 	}
 
 	/**
@@ -715,7 +742,9 @@ public class M3UListApp {
 								if (sanatci.equals("") == false && sarkiAdi.equals("") == false) {
 									String lyrics = tag.getFirst(FieldKey.LYRICS);
 									if (lyrics == null || lyrics.trim().length() == 0) {
-										lyrics = searchLyricsOnline(sanatci, sarkiAdi);
+										lyrics = getSongUrl(sanatci, sarkiAdi);
+										// lyrics = searchLyricsOnline(sanatci, sarkiAdi);
+
 										if (lyrics.length() > 0)
 											fieldGuncelleMap.put(FieldKey.LYRICS, lyrics);
 									}
