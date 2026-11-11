@@ -9,8 +9,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
@@ -22,8 +20,6 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -39,10 +35,6 @@ import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.datatype.Artwork;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import com.google.gson.Gson;
 import com.mpatric.mp3agic.ID3v2;
@@ -52,8 +44,6 @@ public class M3UListApp {
 
 	static Logger logger = Logger.getLogger("mp3.M3UListApp");
 	static String lrclibAdres = "https://lrclib.net";
-	static String lyricsRootAdres = "https://api.lyrics.ovh";
-	static String geniusRootAdres = "https://genius.com";
 
 	static Boolean sozAdresiAcik = null;
 	static Gson gson = new Gson();
@@ -157,13 +147,7 @@ public class M3UListApp {
 					} catch (Exception e1) {
 						sozAdresiAcik = false;
 					}
-					try {
 
-						SSLImport.getCertificateInputStream(geniusRootAdres);
-
-					} catch (Exception e1) {
-						sozAdresiAcik = false;
-					}
 					File file = chooser1.getSelectedFile();
 					mp3KontrolEt(file, sb);
 					if (sb.length() > 0) {
