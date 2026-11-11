@@ -552,7 +552,6 @@ public class M3UListApp {
 
 						// JSON formatındaki \n gibi kaçış karakterlerini Java'ya uyarlıyoruz
 						gercekSozler = rawLyrics.replace("\\n", "\n").replace("\\r", "").replace("\\\"", "\"").trim();
-						System.out.println("[ " + sanatci + " - " + sarkiAdi + " ]\n" + gercekSozler);
 					}
 				}
 			}
@@ -560,8 +559,8 @@ public class M3UListApp {
 			e.printStackTrace();
 			gercekSozler = "Bağlantı hatası: " + e.getMessage();
 		}
-		if (gercekSozler == null || gercekSozler.equals(""))
-			System.err.println("[ " + sanatci + " - " + sarkiAdi + " ] sözleri bulunamadı!");
+		// if (gercekSozler == null || gercekSozler.equals(""))
+		// System.err.println("[ " + sanatci + " - " + sarkiAdi + " ] sözleri bulunamadı!");
 		return gercekSozler;
 
 	}
@@ -633,6 +632,7 @@ public class M3UListApp {
 							System.err.println(mp3File.getAbsolutePath() + " boşluk " + line + " düzenlendi!");
 							mp3File.renameTo(new File(line));
 							mp3File = new File(line);
+							oldStr = line;
 						}
 					}
 
@@ -729,9 +729,12 @@ public class M3UListApp {
 										lyrics = getSongUrl(sanatci, sarkiAdi);
 										// lyrics = searchLyricsOnline(sanatci, sarkiAdi);
 
-										if (lyrics.length() > 0)
+										if (lyrics.length() > 0) {
 											fieldGuncelleMap.put(FieldKey.LYRICS, lyrics);
-									}
+											System.out.println(oldStr + " şarkı sözü yazıldı.");
+										}
+
+									} else System.out.println(oldStr + " şarkı sözü bulundu.");
 								}
 							}
 							if (fieldGuncelleMap.isEmpty() == false || list != null) {

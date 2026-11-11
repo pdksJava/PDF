@@ -6,6 +6,5 @@
 	<classpathentry kind="lib" path="lib/ojdbc14.jar"/>
 	<classpathentry kind="lib" path="lib/mp3agic-0.8.4.jar"/>
 	<classpathentry kind="lib" path="lib/gson-2.3.1.jar"/>
-	<classpathentry kind="lib" path="lib/jsoup-1.15.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
