@@ -40,6 +40,7 @@ import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.datatype.Artwork;
 
+import com.google.gson.Gson;
 import com.mpatric.mp3agic.ID3v2;
 import com.mpatric.mp3agic.Mp3File;
 
@@ -48,6 +49,7 @@ public class M3UListApp {
 	static Logger logger = Logger.getLogger("mp3.M3UListApp");
 	static String rootAdres = "https://api.lyrics.ovh";
 	static Boolean sozAdresiAcik = null;
+	static Gson gson = new Gson();
 
 	public static void main(String[] args) {
 		File[] roots = File.listRoots();
@@ -222,9 +224,12 @@ public class M3UListApp {
 											if (tag != null) {
 												String sarkiAdi = tag.getFirst(FieldKey.TITLE);
 												String sanatci = tag.getFirst(FieldKey.ARTIST);
-												// String album = tag.getFirst(FieldKey.ALBUM);
-												// String yil = tag.getFirst(FieldKey.YEAR);
-												// String janr = tag.getFirst(FieldKey.GENRE);
+												// String album =
+												// tag.getFirst(FieldKey.ALBUM);
+												// String yil =
+												// tag.getFirst(FieldKey.YEAR);
+												// String janr =
+												// tag.getFirst(FieldKey.GENRE);
 												dosyaAdi = sanatci + " - " + sarkiAdi;
 											}
 										} catch (Exception e1) {
@@ -384,7 +389,9 @@ public class M3UListApp {
 														if (!solistOnceki.equals(solist)) {
 															guncellendi = true;
 															Liste listeStart = listOrj.get(startIndex), listeOnceki = listOrj.get(oncekiSira);
-															// System.out.println(listeStart.getId() + " " + listeOnceki.getId());
+															// System.out.println(listeStart.getId()
+															// + " " +
+															// listeOnceki.getId());
 															listOrj.set(startIndex, listeOnceki);
 															listOrj.set(oncekiSira, listeStart);
 															solistMap.put(oncekiSira, solistOnceki);
@@ -446,7 +453,8 @@ public class M3UListApp {
 									sb.append(ilkSatir + "\n");
 								for (Liste listeSon : listOrj) {
 									String str = (String) listeSon.getId();
-									// System.out.println(listeSon.getNumValue() + " -->" + str);
+									// System.out.println(listeSon.getNumValue()
+									// + " -->" + str);
 									if (!strList.contains(str)) {
 										strList.add(str);
 										if (str.trim().length() > 0) {
@@ -505,35 +513,46 @@ public class M3UListApp {
 	 * @return
 	 */
 	protected static String searchLyricsOnline(String artist, String title) {
-		StringBuilder content = new StringBuilder();
+		String content = "";
 		try {
 			String characterEncoding = StandardCharsets.UTF_8.toString();
 			SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
 			sslContext.init(null, null, new java.security.SecureRandom());
 			HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
-			String adres = String.format(rootAdres + "/v1/%s/%s", URLEncoder.encode(artist, characterEncoding), URLEncoder.encode(title, characterEncoding));
+			String adres = String.format(rootAdres + "/v1/%s/%s", URLEncoder.encode(artist.trim(), characterEncoding), URLEncoder.encode(title.trim(), characterEncoding));
 			URL url = new URL(adres);
-
 			HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 			connection.setRequestMethod("GET");
 
 			int responseCode = connection.getResponseCode();
-			System.out.println("Response Code: " + responseCode);
-			if (sozAdresiAcik == null)
-				sozAdresiAcik = true;
-			BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-			String inputLine;
+			// System.out.println("Response Code: " + responseCode);
 
+			BufferedReader in = new BufferedReader(new InputStreamReader(responseCode == 200 ? connection.getInputStream() : connection.getErrorStream()));
+			String inputLine;
+			StringBuilder sb = new StringBuilder();
 			while ((inputLine = in.readLine()) != null) {
-				content.append(inputLine);
+				sb.append(inputLine);
 			}
 			in.close();
 			connection.disconnect();
+			if (sb != null) {
+				if (sozAdresiAcik == null)
+					sozAdresiAcik = true;
+				LinkedHashMap<String, Object> map = gson.fromJson(sb.toString(), LinkedHashMap.class);
+				if (map.containsKey("lyrics")) {
+					content = new StringBuilder(map.get("lyrics").toString()).toString();
+					System.out.println(artist + " - " + title + "\n" + content);
+				} else
+					System.err.println(artist + " - " + title + " söz yok!");
+
+				map = null;
+			}
+			sb = null;
 		} catch (Exception e) {
 			sozAdresiAcik = false;
 		}
 
-		return content.toString();
+		return content;
 	}
 
 	/**
@@ -552,7 +571,8 @@ public class M3UListApp {
 			// İşlemi başlat
 			Process process = processBuilder.start();
 
-			// Java 7'nin "try-with-resources" özelliği ile akışı güvenli bir şekilde kapatıyoruz
+			// Java 7'nin "try-with-resources" özelliği ile akışı güvenli bir
+			// şekilde kapatıyoruz
 			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"))) {
 				String line;
 				while ((line = reader.readLine()) != null) {
@@ -633,7 +653,6 @@ public class M3UListApp {
 							}
 						}
 					} catch (Exception e) {
-						// TODO: handle exception
 					}
 
 					try {
@@ -820,7 +839,6 @@ public class M3UListApp {
 
 							}
 						} catch (Exception e) {
-							// TODO Auto-generated catch block
 							sb.append(e.getMessage() + " --> " + oldStr + "\n");
 						}
 					}

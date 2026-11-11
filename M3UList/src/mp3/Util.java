@@ -253,7 +253,7 @@ public class Util {
 					System.out.println("");
 				list.add(line);
 			}
-
+			reader.close();
 			// String line = reader.readLine();
 			// while (line != null) {
 			// list.add(line);
