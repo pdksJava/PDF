@@ -734,7 +734,8 @@ public class M3UListApp {
 											System.out.println(oldStr + " şarkı sözü yazıldı.");
 										}
 
-									} else System.out.println(oldStr + " şarkı sözü bulundu.");
+									} else
+										System.out.println(oldStr + " şarkı sözü bulundu.");
 								}
 							}
 							if (fieldGuncelleMap.isEmpty() == false || list != null) {
@@ -759,8 +760,9 @@ public class M3UListApp {
 										}
 
 									}
+									if (fieldKey.equals(FieldKey.LYRICS) == false)
 
-									str += "\n" + fieldKey.name() + " = '" + deger + "'";
+										str += "\n" + fieldKey.name() + " = '" + deger + "'";
 								}
 								if (list != null)
 									tag.deleteArtworkField();
