@@ -541,9 +541,9 @@ public class M3UListApp {
 				LinkedHashMap<String, Object> map = gson.fromJson(sb.toString(), LinkedHashMap.class);
 				if (map.containsKey("lyrics")) {
 					content = new StringBuilder(map.get("lyrics").toString()).toString();
-					System.out.println(artist + " - " + title + "\n" + content);
+					System.out.println("[ " + artist + " - " + title + " ]\n" + content);
 				} else
-					System.err.println(artist + " - " + title + " söz yok!");
+					System.err.println("[ " + artist + " - " + title + " ] söz yok!");
 
 				map = null;
 			}
