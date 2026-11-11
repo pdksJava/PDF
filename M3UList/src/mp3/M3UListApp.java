@@ -527,8 +527,8 @@ public class M3UListApp {
 			// Bot engeline takılmamak için uygulamamızı tanıtıyoruz
 			conn.setRequestProperty("User-Agent", "M3UListApp/1.0");
 			conn.setRequestProperty("Accept", "application/json");
-			conn.setConnectTimeout(8000);
-			conn.setReadTimeout(8000);
+			conn.setConnectTimeout(10000);
+			conn.setReadTimeout(15000);
 
 			if (conn.getResponseCode() == 200) {
 				java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
@@ -679,12 +679,15 @@ public class M3UListApp {
 							for (int j = 0; j < alanlar.length; j++) {
 								FieldKey alan = alanlar[j];
 								String deger = null;
+
 								try {
 									deger = tag.getFirst(alan);
 								} catch (Exception e) {
 									continue;
 								}
-								if (deger != null && deger.trim().length() > 0) {
+								if (alan.equals(FieldKey.REMIXER) || alan.equals(FieldKey.CONDUCTOR) || alan.equals(FieldKey.LYRICIST)) {
+									fieldGuncelleMap.put(alan, "");
+								} else if (deger != null && deger.trim().length() > 0) {
 									if (alan.equals(FieldKey.LYRICS) == false && alan.equals(FieldKey.TITLE) == false && alan.equals(FieldKey.ARTIST) == false && alan.equals(FieldKey.ALBUM_ARTIST) == false && alan.equals(FieldKey.ALBUM) == false) {
 										fieldGuncelleMap.put(alan, "");
 									}
