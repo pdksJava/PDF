@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -515,7 +514,7 @@ public class M3UListApp {
 			String adres = String.format(rootAdres + "/v1/%s/%s", URLEncoder.encode(artist, characterEncoding), URLEncoder.encode(title, characterEncoding));
 			URL url = new URL(adres);
 
-			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 			connection.setRequestMethod("GET");
 
 			int responseCode = connection.getResponseCode();
