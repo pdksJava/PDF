@@ -44,10 +44,9 @@ public class M3UListApp {
 
 	static Logger logger = Logger.getLogger("mp3.M3UListApp");
 	static String lrclibAdres = "https://lrclib.net";
- 	static Boolean sozAdresiAcik = null;
+	static Boolean sozAdresiAcik = null;
 	static Gson gson = new Gson();
 
-	 
 	public static void main(String[] args) {
 		File[] roots = File.listRoots();
 		String rootStr = "";
@@ -544,7 +543,7 @@ public class M3UListApp {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println(sanatci + " - " + sarkiAdi + "\n" + e.getLocalizedMessage());
+			System.err.println(sanatci + " - " + sarkiAdi + "\n" + (e.getMessage() != null ? e.getMessage() : "Hata oluştu!"));
 		}
 		return fieldGuncelleMap;
 
