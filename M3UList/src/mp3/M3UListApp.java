@@ -714,15 +714,11 @@ public class M3UListApp {
 									String lyrics = tag.getFirst(FieldKey.LYRICS);
 									if (lyrics == null || lyrics.trim().length() == 0) {
 										lyrics = getSongUrl(sanatci, sarkiAdi);
-										// lyrics = searchLyricsOnline(sanatci, sarkiAdi);
-
-										if (lyrics.length() > 0) {
+ 										if (lyrics.length() > 0) {
 											fieldGuncelleMap.put(FieldKey.LYRICS, lyrics);
 											System.out.println(oldStr + " şarkı sözü yazıldı.");
 										}
-
-									} else
-										System.out.println(oldStr + " şarkı sözü bulundu.");
+ 									}  
 								}
 							}
 							if (fieldGuncelleMap.isEmpty() == false || list != null) {
