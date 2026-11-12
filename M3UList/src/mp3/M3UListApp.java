@@ -513,9 +513,9 @@ public class M3UListApp {
 	 * @param sarkiAdi
 	 * @return
 	 */
-	private static String getSongUrl(String sanatci, String sarkiAdi) {
-		String gercekSozler = "";
+	private static HashMap<FieldKey, String> getSongUrl(String sanatci, String sarkiAdi) {
 
+		HashMap<FieldKey, String> fieldGuncelleMap = null;
 		try {
 			String encoding = "UTF-8";
 			String urlStr = lrclibAdres + "/api/get" + "?artist_name=" + java.net.URLEncoder.encode(sanatci, encoding) + "&track_name=" + java.net.URLEncoder.encode(sarkiAdi, encoding);
@@ -536,15 +536,19 @@ public class M3UListApp {
 				in.close();
 				LinkedHashMap<String, String> map = gson.fromJson(response.toString(), LinkedHashMap.class);
 				if (map != null) {
+					fieldGuncelleMap = new HashMap<FieldKey, String>();
+					if (map.containsKey("albumName"))
+						fieldGuncelleMap.put(FieldKey.ALBUM, map.get("albumName"));
 					if (map.containsKey("plainLyrics"))
-						gercekSozler = map.get("plainLyrics");
+						fieldGuncelleMap.put(FieldKey.LYRICS, map.get("plainLyrics"));
+
 					map = null;
 				}
 			}
 		} catch (Exception e) {
-			gercekSozler = "";
+
 		}
-		return gercekSozler;
+		return fieldGuncelleMap;
 
 	}
 
@@ -625,6 +629,7 @@ public class M3UListApp {
 					AudioFile audioFile = null;
 					String sarkiAdi = "";
 					String sanatci = "";
+					String albumAdi = "";
 					String[] dizi = mp3Adi.split("-");
 					try {
 						fieldGuncelleMap.clear();
@@ -650,27 +655,28 @@ public class M3UListApp {
 					}
 
 					try {
- 						Tag tag = audioFile != null ? audioFile.getTag() : null;
+						Tag tag = audioFile != null ? audioFile.getTag() : null;
 						if (tag != null) {
 							List<Artwork> list = tag.getArtworkList();
 							if (list != null && list.isEmpty())
 								list = null;
- 							sarkiAdi = tag.getFirst(FieldKey.TITLE);
+							sarkiAdi = tag.getFirst(FieldKey.TITLE);
 							sanatci = tag.getFirst(FieldKey.ARTIST);
+							albumAdi = tag.getFirst(FieldKey.ALBUM);
 							for (FieldKey alan : alanlar) {
 								String deger = null;
 								if (alan.equals(FieldKey.COVER_ART))
 									continue;
- 								try {
+								try {
 									deger = tag.getFirst(alan);
 								} catch (Exception e) {
 									deger = "";
 								}
 
 								if (deger != null) {
- 									if (deger.trim().length() > 0) {
+									if (deger.trim().length() > 0) {
 										if (alan.equals(FieldKey.REMIXER) || alan.equals(FieldKey.CONDUCTOR) || alan.equals(FieldKey.LYRICIST)) {
- 											fieldGuncelleMap.put(alan, "");
+											fieldGuncelleMap.put(alan, "");
 										} else if (alan.equals(FieldKey.LYRICS) == false && alan.equals(FieldKey.TITLE) == false && alan.equals(FieldKey.ARTIST) == false && alan.equals(FieldKey.ALBUM_ARTIST) == false && alan.equals(FieldKey.ALBUM) == false) {
 											fieldGuncelleMap.put(alan, "");
 										}
@@ -713,19 +719,28 @@ public class M3UListApp {
 								if (sanatci.equals("") == false && sarkiAdi.equals("") == false) {
 									String lyrics = tag.getFirst(FieldKey.LYRICS);
 									if (lyrics == null || lyrics.trim().length() == 0) {
-										lyrics = getSongUrl(sanatci, sarkiAdi);
- 										if (lyrics.length() > 0) {
-											fieldGuncelleMap.put(FieldKey.LYRICS, lyrics);
-											System.out.println(oldStr + " şarkı sözü yazıldı.");
+										HashMap<FieldKey, String> sarkiMap = getSongUrl(sanatci, sarkiAdi);
+										if (sarkiMap != null) {
+											if (sarkiMap.containsKey(FieldKey.LYRICS))
+												lyrics = sarkiMap.get(FieldKey.LYRICS);
+											if (lyrics != null && lyrics.length() > 0) {
+												fieldGuncelleMap.put(FieldKey.LYRICS, lyrics);
+												if (sarkiMap.containsKey(FieldKey.ALBUM)) {
+													String sarkiAlbum = sarkiMap.get(FieldKey.ALBUM);
+													if (sarkiAlbum.trim().equalsIgnoreCase(albumAdi) == false)
+														fieldGuncelleMap.put(FieldKey.ALBUM, sarkiAlbum.trim());
+												}
+											}
+											sarkiMap = null;
 										}
- 									}  
+									}
 								}
 							}
 							if (fieldGuncelleMap.isEmpty() == false || list != null) {
-								String str = oldStr + " --> ";
+								String str = oldStr + " --> ", enter = "";
+
 								for (Iterator iterator = fieldGuncelleMap.keySet().iterator(); iterator.hasNext();) {
 									FieldKey fieldKey = (FieldKey) iterator.next();
-
 									String deger = fieldGuncelleMap.get(fieldKey);
 									if (fieldKey.equals(FieldKey.COMMENT) || fieldKey.equals(FieldKey.COVER_ART))
 										tag.deleteField(fieldKey);
@@ -735,7 +750,6 @@ public class M3UListApp {
 												tag.createField(fieldKey, "");
 										}
 										try {
-
 											tag.setField(fieldKey, deger);
 
 										} catch (Exception e) {
@@ -743,9 +757,11 @@ public class M3UListApp {
 										}
 
 									}
-									if (fieldKey.equals(FieldKey.LYRICS) == false)
-
-										str += "\n" + fieldKey.name() + " = '" + deger + "'";
+									if (fieldKey.equals(FieldKey.LYRICS) == false) {
+										enter = "\n";
+										str += enter + fieldKey.name() + " = '" + deger + "'";
+									} else
+										str += enter + " Şarkı sözü yazıldı.";
 								}
 								if (list != null)
 									tag.deleteArtworkField();
@@ -770,6 +786,7 @@ public class M3UListApp {
 
 								sanatci = id3v2Tag.getArtist() != null ? id3v2Tag.getArtist().trim() : "";
 								sarkiAdi = id3v2Tag.getTitle() != null ? id3v2Tag.getTitle().trim() : "";
+								albumAdi = id3v2Tag.getAlbum() != null ? id3v2Tag.getAlbum().trim() : "";
 								if (id3v2Tag.getAlbumImage() != null)
 									fieldGuncelleMap.put(FieldKey.COVER_ART, id3v2Tag.getAlbumImageMimeType());
 								if (sanatci.equals("") || sarkiAdi.equals("")) {
