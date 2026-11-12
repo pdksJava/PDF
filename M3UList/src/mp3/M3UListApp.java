@@ -47,6 +47,7 @@ public class M3UListApp {
 
 	static Boolean sozAdresiAcik = null;
 	static Gson gson = new Gson();
+
 	static final String ACCESS_TOKEN = "YOUR_GENIUS_ACCESS_TOKEN";
 
 	public static void main(String[] args) {
@@ -512,55 +513,37 @@ public class M3UListApp {
 	 * @param sarkiAdi
 	 * @return
 	 */
-	public static String getSongUrl(String sanatci, String sarkiAdi) {
+	private static String getSongUrl(String sanatci, String sarkiAdi) {
 		String gercekSozler = "";
 
 		try {
-
-			// Türkçe şarkıları sorunsuz bulan kararlı küresel servis: LRCLIB API
-			String urlStr = lrclibAdres + "/api/get" + "?artist_name=" + java.net.URLEncoder.encode(sanatci, "UTF-8") + "&track_name=" + java.net.URLEncoder.encode(sarkiAdi, "UTF-8");
-
+			String encoding = "UTF-8";
+			String urlStr = lrclibAdres + "/api/get" + "?artist_name=" + java.net.URLEncoder.encode(sanatci, encoding) + "&track_name=" + java.net.URLEncoder.encode(sarkiAdi, encoding);
 			java.net.URL url = new java.net.URL(urlStr);
 			java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
-
-			// Bot engeline takılmamak için uygulamamızı tanıtıyoruz
 			conn.setRequestProperty("User-Agent", "M3UListApp/1.0");
 			conn.setRequestProperty("Accept", "application/json");
-			conn.setConnectTimeout(10000);
-			conn.setReadTimeout(15000);
-
+			conn.setConnectTimeout(15000);
+			conn.setReadTimeout(20000);
 			if (conn.getResponseCode() == 200) {
 				java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
 				StringBuilder response = new StringBuilder();
 				String inputLine;
-
 				while ((inputLine = in.readLine()) != null) {
 					response.append(inputLine);
 				}
 				in.close();
-
-				String jsonResponse = response.toString();
-
-				// Gelen JSON verisindeki düz metin şarkı sözü ("plainLyrics") alanını süzüyoruz
-				if (jsonResponse.contains("\"plainLyrics\":\"")) {
-					int start = jsonResponse.indexOf("\"plainLyrics\":\"") + 15;
-					int end = jsonResponse.indexOf("\"", start);
-
-					if (end > start) {
-						String rawLyrics = jsonResponse.substring(start, end);
-
-						// JSON formatındaki \n gibi kaçış karakterlerini Java'ya uyarlıyoruz
-						gercekSozler = rawLyrics.replace("\\n", "\n").replace("\\r", "").replace("\\\"", "\"").trim();
-					}
+				LinkedHashMap<String, String> map = gson.fromJson(response.toString(), LinkedHashMap.class);
+				if (map != null) {
+					if (map.containsKey("plainLyrics"))
+						gercekSozler = map.get("plainLyrics");
+					map = null;
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			gercekSozler = "Bağlantı hatası: " + e.getMessage();
+			gercekSozler = "";
 		}
-		// if (gercekSozler == null || gercekSozler.equals(""))
-		// System.err.println("[ " + sanatci + " - " + sarkiAdi + " ] sözleri bulunamadı!");
 		return gercekSozler;
 
 	}
@@ -570,7 +553,7 @@ public class M3UListApp {
 	 * @param outputFilePath
 	 *            setx /M PATH "%PATH%;C:\Program Files\Wondershare\UniConverter"
 	 */
-	protected static void convertToMp3(String inputFilePath, String outputFilePath) {
+	private static void convertToMp3(String inputFilePath, String outputFilePath) {
 		// FFmpeg komutunu argüman dizisi olarak hazırlıyoruz
 		ProcessBuilder processBuilder = new ProcessBuilder("C:\\Program Files\\Wondershare\\UniConverter\\ffmpeg.exe", "-i", inputFilePath, "-codec:a", "libmp3lame", "-qscale:a", "2", outputFilePath);
 
@@ -584,7 +567,7 @@ public class M3UListApp {
 			// Java 7'nin "try-with-resources" özelliği ile akışı güvenli bir
 			// şekilde kapatıyoruz
 			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"))) {
-				String line;
+				String line = null;
 				while ((line = reader.readLine()) != null) {
 					System.out.println("FFmpeg : " + line);
 				}
@@ -667,29 +650,30 @@ public class M3UListApp {
 					}
 
 					try {
-
-						Tag tag = audioFile != null ? audioFile.getTag() : null;
+ 						Tag tag = audioFile != null ? audioFile.getTag() : null;
 						if (tag != null) {
 							List<Artwork> list = tag.getArtworkList();
 							if (list != null && list.isEmpty())
 								list = null;
-
-							sarkiAdi = tag.getFirst(FieldKey.TITLE);
+ 							sarkiAdi = tag.getFirst(FieldKey.TITLE);
 							sanatci = tag.getFirst(FieldKey.ARTIST);
-							for (int j = 0; j < alanlar.length; j++) {
-								FieldKey alan = alanlar[j];
+							for (FieldKey alan : alanlar) {
 								String deger = null;
-
-								try {
+								if (alan.equals(FieldKey.COVER_ART))
+									continue;
+ 								try {
 									deger = tag.getFirst(alan);
 								} catch (Exception e) {
-									continue;
+									deger = "";
 								}
-								if (alan.equals(FieldKey.REMIXER) || alan.equals(FieldKey.CONDUCTOR) || alan.equals(FieldKey.LYRICIST)) {
-									fieldGuncelleMap.put(alan, "");
-								} else if (deger != null && deger.trim().length() > 0) {
-									if (alan.equals(FieldKey.LYRICS) == false && alan.equals(FieldKey.TITLE) == false && alan.equals(FieldKey.ARTIST) == false && alan.equals(FieldKey.ALBUM_ARTIST) == false && alan.equals(FieldKey.ALBUM) == false) {
-										fieldGuncelleMap.put(alan, "");
+
+								if (deger != null) {
+ 									if (deger.trim().length() > 0) {
+										if (alan.equals(FieldKey.REMIXER) || alan.equals(FieldKey.CONDUCTOR) || alan.equals(FieldKey.LYRICIST)) {
+ 											fieldGuncelleMap.put(alan, "");
+										} else if (alan.equals(FieldKey.LYRICS) == false && alan.equals(FieldKey.TITLE) == false && alan.equals(FieldKey.ARTIST) == false && alan.equals(FieldKey.ALBUM_ARTIST) == false && alan.equals(FieldKey.ALBUM) == false) {
+											fieldGuncelleMap.put(alan, "");
+										}
 									}
 								}
 							}
