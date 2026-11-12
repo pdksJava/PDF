@@ -538,9 +538,9 @@ public class M3UListApp {
 				if (map != null) {
 					fieldGuncelleMap = new HashMap<FieldKey, String>();
 					if (map.containsKey("albumName"))
-						fieldGuncelleMap.put(FieldKey.ALBUM, map.get("albumName"));
+						fieldGuncelleMap.put(FieldKey.ALBUM, map.get("albumName").replaceAll("  ", " ").trim());
 					if (map.containsKey("plainLyrics"))
-						fieldGuncelleMap.put(FieldKey.LYRICS, map.get("plainLyrics"));
+						fieldGuncelleMap.put(FieldKey.LYRICS, map.get("plainLyrics").replaceAll("  ", " ").trim());
 
 					map = null;
 				}
