@@ -656,7 +656,7 @@ public class M3UListApp {
 
 					try {
 						Tag tag = audioFile != null ? audioFile.getTag() : null;
-						if (tag != null) {
+ 						if (tag != null) {
 							List<Artwork> list = tag.getArtworkList();
 							if (list != null && list.isEmpty())
 								list = null;
@@ -761,7 +761,7 @@ public class M3UListApp {
 										enter = "\n";
 										str += enter + fieldKey.name() + " = '" + deger + "'";
 									} else
-										str += enter + " Şarkı sözü yazıldı.";
+										str += enter + "Şarkı sözü yazıldı.";
 								}
 								if (list != null)
 									tag.deleteArtworkField();
@@ -783,10 +783,11 @@ public class M3UListApp {
 							mp3file = new Mp3File(mp3File.getAbsolutePath(), 8192, false);
 							if (mp3file.hasId3v2Tag()) {
 								ID3v2 id3v2Tag = mp3file.getId3v2Tag();
-
+								String lyrics = id3v2Tag.getLyrics() != null ? id3v2Tag.getLyrics().trim() : "";
 								sanatci = id3v2Tag.getArtist() != null ? id3v2Tag.getArtist().trim() : "";
 								sarkiAdi = id3v2Tag.getTitle() != null ? id3v2Tag.getTitle().trim() : "";
 								albumAdi = id3v2Tag.getAlbum() != null ? id3v2Tag.getAlbum().trim() : "";
+
 								if (id3v2Tag.getAlbumImage() != null)
 									fieldGuncelleMap.put(FieldKey.COVER_ART, id3v2Tag.getAlbumImageMimeType());
 								if (sanatci.equals("") || sarkiAdi.equals("")) {
@@ -819,9 +820,24 @@ public class M3UListApp {
 									if (album.trim().equals(""))
 										fieldGuncelleMap.put(FieldKey.ALBUM, sarkiAdi);
 								}
-
+								if (lyrics == null || lyrics.trim().length() == 0) {
+									HashMap<FieldKey, String> sarkiMap = getSongUrl(sanatci, sarkiAdi);
+									if (sarkiMap != null) {
+										if (sarkiMap.containsKey(FieldKey.LYRICS))
+											lyrics = sarkiMap.get(FieldKey.LYRICS);
+										if (lyrics != null && lyrics.length() > 0) {
+											fieldGuncelleMap.put(FieldKey.LYRICS, lyrics);
+											if (sarkiMap.containsKey(FieldKey.ALBUM)) {
+												String sarkiAlbum = sarkiMap.get(FieldKey.ALBUM);
+												if (sarkiAlbum.trim().equalsIgnoreCase(albumAdi) == false)
+													fieldGuncelleMap.put(FieldKey.ALBUM, sarkiAlbum.trim());
+											}
+										}
+										sarkiMap = null;
+									}
+								}
 								if (fieldGuncelleMap.isEmpty() == false) {
-									String str = oldStr + " --> ";
+									String str = oldStr + " --> ", enter = "";
 									for (Iterator iterator = fieldGuncelleMap.keySet().iterator(); iterator.hasNext();) {
 										FieldKey fieldKey = (FieldKey) iterator.next();
 										String deger = fieldGuncelleMap.get(fieldKey);
@@ -836,9 +852,15 @@ public class M3UListApp {
 												id3v2Tag.setArtist(deger);
 											else if (fieldKey.equals(FieldKey.ALBUM_ARTIST))
 												id3v2Tag.setAlbumArtist(deger);
+											else if (fieldKey.equals(FieldKey.LYRICS))
+												id3v2Tag.setLyrics(deger);
 										}
 
-										str += "\n" + fieldKey.name() + " = '" + deger + "'";
+										if (fieldKey.equals(FieldKey.LYRICS) == false) {
+											enter = "\n";
+											str += enter + fieldKey.name() + " = '" + deger + "'";
+										} else
+											str += enter + "Şarkı sözü yazıldı.";
 									}
 									String tempPath = mp3File.getAbsolutePath() + ".tmp";
 									mp3file.save(tempPath);

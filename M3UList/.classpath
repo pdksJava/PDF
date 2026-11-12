@@ -3,8 +3,8 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/jaudiotagger-2.0.1.jar"/>
-	<classpathentry kind="lib" path="lib/mp3agic-0.8.4.jar"/>
 	<classpathentry kind="lib" path="lib/ojdbc14.jar"/>
 	<classpathentry kind="lib" path="lib/gson-2.3.1.jar"/>
+	<classpathentry kind="lib" path="lib/mp3agic-0.9.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
