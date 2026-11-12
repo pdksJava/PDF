@@ -44,12 +44,10 @@ public class M3UListApp {
 
 	static Logger logger = Logger.getLogger("mp3.M3UListApp");
 	static String lrclibAdres = "https://lrclib.net";
-
-	static Boolean sozAdresiAcik = null;
+ 	static Boolean sozAdresiAcik = null;
 	static Gson gson = new Gson();
 
-	static final String ACCESS_TOKEN = "YOUR_GENIUS_ACCESS_TOKEN";
-
+	 
 	public static void main(String[] args) {
 		File[] roots = File.listRoots();
 		String rootStr = "";
@@ -546,7 +544,7 @@ public class M3UListApp {
 				}
 			}
 		} catch (Exception e) {
-
+			System.err.println(sanatci + " - " + sarkiAdi + "\n" + e.getLocalizedMessage());
 		}
 		return fieldGuncelleMap;
 
@@ -656,7 +654,7 @@ public class M3UListApp {
 
 					try {
 						Tag tag = audioFile != null ? audioFile.getTag() : null;
- 						if (tag != null) {
+						if (tag != null) {
 							List<Artwork> list = tag.getArtworkList();
 							if (list != null && list.isEmpty())
 								list = null;
@@ -787,7 +785,7 @@ public class M3UListApp {
 								sanatci = id3v2Tag.getArtist() != null ? id3v2Tag.getArtist().trim() : "";
 								sarkiAdi = id3v2Tag.getTitle() != null ? id3v2Tag.getTitle().trim() : "";
 								albumAdi = id3v2Tag.getAlbum() != null ? id3v2Tag.getAlbum().trim() : "";
- 								if (id3v2Tag.getAlbumImage() != null)
+								if (id3v2Tag.getAlbumImage() != null)
 									fieldGuncelleMap.put(FieldKey.COVER_ART, id3v2Tag.getAlbumImageMimeType());
 								if (sanatci.equals("") || sarkiAdi.equals("")) {
 									if (dizi.length == 2 && mp3Adi.indexOf("-") == mp3Adi.lastIndexOf("-")) {
