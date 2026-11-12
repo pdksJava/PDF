@@ -787,8 +787,7 @@ public class M3UListApp {
 								sanatci = id3v2Tag.getArtist() != null ? id3v2Tag.getArtist().trim() : "";
 								sarkiAdi = id3v2Tag.getTitle() != null ? id3v2Tag.getTitle().trim() : "";
 								albumAdi = id3v2Tag.getAlbum() != null ? id3v2Tag.getAlbum().trim() : "";
-
-								if (id3v2Tag.getAlbumImage() != null)
+ 								if (id3v2Tag.getAlbumImage() != null)
 									fieldGuncelleMap.put(FieldKey.COVER_ART, id3v2Tag.getAlbumImageMimeType());
 								if (sanatci.equals("") || sarkiAdi.equals("")) {
 									if (dizi.length == 2 && mp3Adi.indexOf("-") == mp3Adi.lastIndexOf("-")) {
