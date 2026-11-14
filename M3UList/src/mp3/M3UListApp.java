@@ -514,7 +514,7 @@ public class M3UListApp {
 		HashMap<FieldKey, String> fieldGuncelleMap = null;
 		String urlStr = "", encoding = "UTF-8";
 		try {
-			urlStr = lrclibAdres + "/api/get" + "?artist_name=" + java.net.URLEncoder.encode(sanatci, encoding) + "&track_name=" + java.net.URLEncoder.encode(sarkiAdi, encoding);
+			urlStr = lrclibAdres + "/api/get" + "?artist_name=" + java.net.URLEncoder.encode(sanatci.trim(), encoding) + "&track_name=" + java.net.URLEncoder.encode(sarkiAdi.trim(), encoding);
 			java.net.URL url = new java.net.URL(urlStr);
 			java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
@@ -533,10 +533,18 @@ public class M3UListApp {
 				LinkedHashMap<String, String> map = gson.fromJson(response.toString(), LinkedHashMap.class);
 				if (map != null) {
 					fieldGuncelleMap = new HashMap<FieldKey, String>();
-					if (map.containsKey("albumName"))
-						fieldGuncelleMap.put(FieldKey.ALBUM, map.get("albumName").replaceAll("  ", " ").trim());
-					if (map.containsKey("plainLyrics"))
-						fieldGuncelleMap.put(FieldKey.LYRICS, map.get("plainLyrics").replaceAll("  ", " ").trim());
+					if (map.containsKey("albumName")) {
+						String albumName = map.get("albumName");
+						if (albumName != null)
+							fieldGuncelleMap.put(FieldKey.ALBUM, albumName.replaceAll("  ", " ").trim());
+					}
+					if (map.containsKey("plainLyrics")) {
+						String plainLyrics = map.get("plainLyrics");
+						if (plainLyrics != null)
+							fieldGuncelleMap.put(FieldKey.LYRICS, plainLyrics.replaceAll("  ", " ").trim());
+						else
+							System.out.println(sanatci.trim() + " " + sarkiAdi.trim() + " sözleri yok!");
+					}
 
 					map = null;
 				}
