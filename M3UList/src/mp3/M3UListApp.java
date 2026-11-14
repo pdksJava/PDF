@@ -511,11 +511,10 @@ public class M3UListApp {
 	 * @return
 	 */
 	private static HashMap<FieldKey, String> getSongUrl(String sanatci, String sarkiAdi) {
-
 		HashMap<FieldKey, String> fieldGuncelleMap = null;
+		String urlStr = "", encoding = "UTF-8";
 		try {
-			String encoding = "UTF-8";
-			String urlStr = lrclibAdres + "/api/get" + "?artist_name=" + java.net.URLEncoder.encode(sanatci, encoding) + "&track_name=" + java.net.URLEncoder.encode(sarkiAdi, encoding);
+			urlStr = lrclibAdres + "/api/get" + "?artist_name=" + java.net.URLEncoder.encode(sanatci, encoding) + "&track_name=" + java.net.URLEncoder.encode(sarkiAdi, encoding);
 			java.net.URL url = new java.net.URL(urlStr);
 			java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("GET");
@@ -543,7 +542,7 @@ public class M3UListApp {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println(sanatci + " - " + sarkiAdi + "\n" + (e.getMessage() != null ? e.getMessage() : "Hata oluştu!"));
+			System.err.println(urlStr + "\n" + (e.getMessage() != null ? e.getMessage() : "Hata oluştu!"));
 		}
 		return fieldGuncelleMap;
 
