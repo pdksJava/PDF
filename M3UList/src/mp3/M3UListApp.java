@@ -752,9 +752,12 @@ public class M3UListApp {
 								String str = oldStr + " --> ", enter = "";
 								if (contentLRC != null) {
 									String fileName = oldStr.substring(0, oldStr.lastIndexOf(".")) + ".lrc";
+									File sozDosyasi = new File(fileName);
+									if (sozDosyasi.exists())
+										sozDosyasi.delete();
 									Util.fileWrite(contentLRC, fileName);
 									enter = "\n";
-									str += enter + fileName + " şarkı sözü dosyası oluşturuldu.";
+									str += enter + sozDosyasi.getName() + " şarkı sözü dosyası oluşturuldu.";
 								}
 
 								for (Iterator iterator = fieldGuncelleMap.keySet().iterator(); iterator.hasNext();) {
