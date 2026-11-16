@@ -755,9 +755,10 @@ public class M3UListApp {
 									File sozDosyasi = new File(fileName);
 									if (sozDosyasi.exists())
 										sozDosyasi.delete();
-									Util.fileWrite(contentLRC, fileName);
-									enter = "\n";
-									str += enter + sozDosyasi.getName() + " şarkı sözü dosyası oluşturuldu.";
+									fieldGuncelleMap.put(FieldKey.LYRICS, contentLRC);
+									// Util.fileWrite(contentLRC, fileName);
+									// enter = "\n";
+									// str += enter + sozDosyasi.getName() + " şarkı sözü dosyası oluşturuldu.";
 								}
 
 								for (Iterator iterator = fieldGuncelleMap.keySet().iterator(); iterator.hasNext();) {
