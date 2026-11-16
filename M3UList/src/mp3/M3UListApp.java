@@ -753,6 +753,8 @@ public class M3UListApp {
 								if (contentLRC != null) {
 									String fileName = oldStr.substring(0, oldStr.lastIndexOf(".")) + ".lrc";
 									Util.fileWrite(contentLRC, fileName);
+									enter = "\n";
+									str += enter + fileName + " şarkı sözü dosyası oluşturuldu.";
 								}
 
 								for (Iterator iterator = fieldGuncelleMap.keySet().iterator(); iterator.hasNext();) {
