@@ -783,7 +783,7 @@ public class M3UListApp {
 										enter = "\n";
 										str += enter + fieldKey.name() + " = '" + deger + "'";
 									} else
-										str += enter + "Şarkı sözü yazıldı.";
+										str += enter + "Şarkı sözü" + (contentLRC != null ? " dosyası" : "") + " yazıldı.";
 								}
 								if (list != null)
 									tag.deleteArtworkField();
