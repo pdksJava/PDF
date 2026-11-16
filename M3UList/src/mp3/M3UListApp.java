@@ -43,7 +43,7 @@ import com.mpatric.mp3agic.Mp3File;
 public class M3UListApp {
 
 	static Logger logger = Logger.getLogger("mp3.M3UListApp");
-	static String lrclibAdres = "https://lrclib.net";
+	static String lrclibAdres = "https://lrclib.net", contentLRC;
 	static Boolean sozAdresiAcik = null;
 	static Gson gson = new Gson();
 
@@ -513,6 +513,7 @@ public class M3UListApp {
 	private static HashMap<FieldKey, String> getSongUrl(String sanatci, String sarkiAdi) {
 		HashMap<FieldKey, String> fieldGuncelleMap = null;
 		String urlStr = "", encoding = "UTF-8";
+
 		try {
 			urlStr = lrclibAdres + "/api/get" + "?artist_name=" + java.net.URLEncoder.encode(sanatci.trim(), encoding) + "&track_name=" + java.net.URLEncoder.encode(sarkiAdi.trim(), encoding);
 			java.net.URL url = new java.net.URL(urlStr);
@@ -537,6 +538,12 @@ public class M3UListApp {
 						String albumName = map.get("albumName");
 						if (albumName != null)
 							fieldGuncelleMap.put(FieldKey.ALBUM, albumName.replaceAll("  ", " ").trim());
+					}
+					if (map.containsKey("syncedLyrics")) {
+						contentLRC = map.get("syncedLyrics");
+						if (contentLRC != null)
+							contentLRC = contentLRC.replaceAll("  ", " ").trim();
+
 					}
 					if (map.containsKey("plainLyrics")) {
 						String plainLyrics = map.get("plainLyrics");
@@ -607,6 +614,7 @@ public class M3UListApp {
 
 			for (int i = 0; i < dosyalar.length; i++) {
 				File mp3File = dosyalar[i];
+				contentLRC = null;
 				if (mp3File.isDirectory()) {
 					mp3KontrolEt(mp3File, sb);
 				} else if (mp3File.isFile() && mp3File.getName().toLowerCase().endsWith(".mp3")) {
@@ -679,9 +687,9 @@ public class M3UListApp {
 
 								if (deger != null) {
 									if (deger.trim().length() > 0) {
-										if (alan.equals(FieldKey.REMIXER) || alan.equals(FieldKey.CONDUCTOR) || alan.equals(FieldKey.LYRICIST)) {
+										if (alan.equals(FieldKey.REMIXER) || alan.equals(FieldKey.CONDUCTOR)) {
 											fieldGuncelleMap.put(alan, "");
-										} else if (alan.equals(FieldKey.LYRICS) == false && alan.equals(FieldKey.TITLE) == false && alan.equals(FieldKey.ARTIST) == false && alan.equals(FieldKey.ALBUM_ARTIST) == false && alan.equals(FieldKey.ALBUM) == false) {
+										} else if (alan.equals(FieldKey.LYRICS) == false && alan.equals(FieldKey.LYRICIST) == false && alan.equals(FieldKey.TITLE) == false && alan.equals(FieldKey.ARTIST) == false && alan.equals(FieldKey.ALBUM_ARTIST) == false && alan.equals(FieldKey.ALBUM) == false) {
 											fieldGuncelleMap.put(alan, "");
 										}
 									}
@@ -742,6 +750,10 @@ public class M3UListApp {
 							}
 							if (fieldGuncelleMap.isEmpty() == false || list != null) {
 								String str = oldStr + " --> ", enter = "";
+								if (contentLRC != null) {
+									String fileName = oldStr.substring(0, oldStr.lastIndexOf(".")) + ".lrc";
+									Util.fileWrite(contentLRC, fileName);
+								}
 
 								for (Iterator iterator = fieldGuncelleMap.keySet().iterator(); iterator.hasNext();) {
 									FieldKey fieldKey = (FieldKey) iterator.next();
