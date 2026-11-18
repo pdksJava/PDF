@@ -506,11 +506,12 @@ public class M3UListApp {
 	}
 
 	/**
+	 * @param dosyaAdi
 	 * @param sanatci
 	 * @param sarkiAdi
 	 * @return
 	 */
-	private static HashMap<FieldKey, String> getSongUrl(String sanatci, String sarkiAdi) {
+	private static HashMap<FieldKey, String> getSongUrl(String dosyaAdi, String sanatci, String sarkiAdi) {
 		HashMap<FieldKey, String> fieldGuncelleMap = null;
 		String urlStr = "", encoding = "UTF-8";
 
@@ -550,7 +551,7 @@ public class M3UListApp {
 						if (plainLyrics != null)
 							fieldGuncelleMap.put(FieldKey.LYRICS, plainLyrics.replaceAll("  ", " ").trim());
 						else
-							System.out.println(sanatci.trim() + " " + sarkiAdi.trim() + " sözleri yok!");
+							System.out.println(dosyaAdi.trim() + " sözleri yok!");
 					}
 
 					map = null;
@@ -731,7 +732,7 @@ public class M3UListApp {
 								if (sanatci.equals("") == false && sarkiAdi.equals("") == false) {
 									String lyrics = tag.getFirst(FieldKey.LYRICS);
 									if (lyrics == null || lyrics.trim().length() == 0) {
-										HashMap<FieldKey, String> sarkiMap = getSongUrl(sanatci, sarkiAdi);
+										HashMap<FieldKey, String> sarkiMap = getSongUrl(oldStr, sanatci, sarkiAdi);
 										if (sarkiMap != null) {
 											if (sarkiMap.containsKey(FieldKey.LYRICS))
 												lyrics = sarkiMap.get(FieldKey.LYRICS);
@@ -842,7 +843,7 @@ public class M3UListApp {
 										fieldGuncelleMap.put(FieldKey.ALBUM, sarkiAdi);
 								}
 								if (lyrics == null || lyrics.trim().length() == 0) {
-									HashMap<FieldKey, String> sarkiMap = getSongUrl(sanatci, sarkiAdi);
+									HashMap<FieldKey, String> sarkiMap = getSongUrl(oldStr, sanatci, sarkiAdi);
 									if (sarkiMap != null) {
 										if (sarkiMap.containsKey(FieldKey.LYRICS))
 											lyrics = sarkiMap.get(FieldKey.LYRICS);
