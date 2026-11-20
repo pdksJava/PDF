@@ -7,9 +7,17 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,15 +45,17 @@ import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.datatype.Artwork;
 
 import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
 import com.mpatric.mp3agic.ID3v2;
 import com.mpatric.mp3agic.Mp3File;
 
 public class M3UListApp {
 
 	static Logger logger = Logger.getLogger("mp3.M3UListApp");
-	static String lrclibAdres = "https://lrclib.net", contentLRC;
+	static String lrclibAdres = "https://lrclib.net", contentLRC, resimDosyaAdi;
 	static Boolean sozAdresiAcik = null;
 	static Gson gson = new Gson();
+	static File resimDosya = null;
 
 	public static void main(String[] args) {
 		File[] roots = File.listRoots();
@@ -74,6 +84,7 @@ public class M3UListApp {
 		final JLabel baslik = new JLabel("Dosya Kontrol");
 		final JTextArea textArea = new JTextArea();
 		final JScrollPane scrollPane = new JScrollPane(textArea);
+
 		baslik.setBounds(100, 50, 150, 40);
 		dosyaKontrol.setBounds(300, 50, 40, 40);
 		scrollPane.setBounds(100, 100, 650, 400);
@@ -506,6 +517,78 @@ public class M3UListApp {
 	}
 
 	/**
+	 * @param searchTerm
+	 * @param albumAdi
+	 * @return
+	 * @throws Exception
+	 */
+	private static String fetchCoverUrlFromItunes(String searchTerm, String albumAdi) throws Exception {
+		String coverUrl = null;
+		String apiUrl = "https://api.deezer.com/search?q=" + URLEncoder.encode(searchTerm, StandardCharsets.UTF_8.name());
+		URL url = new URL(apiUrl);
+		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+		conn.setRequestMethod("GET");
+		conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+		conn.setConnectTimeout(5000);
+		conn.setReadTimeout(5000);
+
+		StringBuilder response = new StringBuilder();
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+			String line;
+			while ((line = in.readLine()) != null) {
+				response.append(line);
+			}
+		}
+
+		// JSON yanıtından artworkUrl100 alanını çek ve 600x600 yüksek çözünürlüğe çevir
+		LinkedHashMap<String, Object> map = gson.fromJson(response.toString(), LinkedHashMap.class);
+		if (map != null && map.containsKey("data")) {
+			List<LinkedTreeMap> list = (ArrayList<LinkedTreeMap>) map.get("data");
+			for (Iterator iterator = list.iterator(); iterator.hasNext();) {
+				LinkedTreeMap linkedHashMap = (LinkedTreeMap) iterator.next();
+				if (linkedHashMap.containsKey("album")) {
+					LinkedTreeMap albumMap = (LinkedTreeMap) linkedHashMap.get("album");
+					String title = albumMap.containsKey("title") ? (String) albumMap.get("title") : null;
+					if (title != null && title.equals(albumAdi)) {
+						if (albumMap.containsKey("cover_medium")) {
+							coverUrl = (String) albumMap.get("cover_medium");
+							break;
+						} else if (albumMap.containsKey("cover_small")) {
+							coverUrl = (String) albumMap.get("cover_small");
+							break;
+						} else if (albumMap.containsKey("cover_big")) {
+							coverUrl = (String) albumMap.get("cover_big");
+							break;
+						}
+					}
+
+				}
+
+			}
+
+		}
+
+		return coverUrl;
+	}
+
+	/**
+	 * @param imageUrl
+	 * @param savePath
+	 * @throws Exception
+	 */
+	private static void downloadImage(String imageUrl, String savePath) throws Exception {
+		URL url = new URL(imageUrl);
+		URLConnection conn = url.openConnection();
+		conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+		conn.setConnectTimeout(5000);
+		conn.setReadTimeout(5000);
+
+		try (InputStream in = conn.getInputStream()) {
+			Files.copy(in, Paths.get(savePath), StandardCopyOption.REPLACE_EXISTING);
+		}
+	}
+
+	/**
 	 * @param text
 	 * @return
 	 */
@@ -533,8 +616,7 @@ public class M3UListApp {
 	 */
 	private static HashMap<FieldKey, String> getSongUrl(String dosyaAdi, String sanatci, String sarkiAdi) {
 		HashMap<FieldKey, String> fieldGuncelleMap = null;
-		String urlStr = "", encoding = "UTF-8";
-
+		String urlStr = "", encoding = "UTF-8", albumName = null;
 		try {
 			urlStr = lrclibAdres + "/api/get" + "?artist_name=" + java.net.URLEncoder.encode(sanatci.trim(), encoding) + "&track_name=" + java.net.URLEncoder.encode(sarkiAdi.trim(), encoding);
 			java.net.URL url = new java.net.URL(urlStr);
@@ -556,7 +638,7 @@ public class M3UListApp {
 				if (map != null) {
 					fieldGuncelleMap = new HashMap<FieldKey, String>();
 					if (map.containsKey("albumName")) {
-						String albumName = fixEncoding(map.get("albumName"));
+						albumName = fixEncoding(map.get("albumName"));
 						if (albumName != null)
 							fieldGuncelleMap.put(FieldKey.ALBUM, albumName.replaceAll("  ", " ").trim());
 					}
@@ -580,6 +662,7 @@ public class M3UListApp {
 		} catch (Exception e) {
 			System.err.println(urlStr + "\n" + (e.getMessage() != null ? e.getMessage() : "Hata oluştu!"));
 		}
+
 		return fieldGuncelleMap;
 
 	}
@@ -655,7 +738,8 @@ public class M3UListApp {
 							oldStr = line;
 						}
 					}
-
+					resimDosya = null;
+					boolean dosyaVar = false;
 					String dosyaAdi = "";
 					String mp3Adi = mp3File.getName();
 					mp3Adi = mp3Adi.substring(0, mp3Adi.lastIndexOf("."));
@@ -686,7 +770,12 @@ public class M3UListApp {
 						}
 					} catch (Exception e) {
 					}
-
+					Mp3File mp3file = null;
+					try {
+						mp3file = new Mp3File(mp3File.getAbsolutePath(), 8192, false);
+					} catch (Exception e) {
+						// TODO: handle exception
+					}
 					try {
 						Tag tag = audioFile != null ? audioFile.getTag() : null;
 						if (tag != null) {
@@ -760,17 +849,37 @@ public class M3UListApp {
 												fieldGuncelleMap.put(FieldKey.LYRICS, lyrics);
 												if (sarkiMap.containsKey(FieldKey.ALBUM)) {
 													String sarkiAlbum = sarkiMap.get(FieldKey.ALBUM);
-													if (sarkiAlbum.trim().equalsIgnoreCase(albumAdi) == false)
+													if (sarkiAlbum.trim().equalsIgnoreCase(albumAdi) == false) {
 														fieldGuncelleMap.put(FieldKey.ALBUM, sarkiAlbum.trim());
+														albumAdi = sarkiAlbum.trim();
+													}
+
 												}
 											}
 											sarkiMap = null;
 										}
 									}
+									resimDosyaAdi = albumAdi != null && albumAdi.trim().length() > 0 ? oldStr.substring(0, oldStr.indexOf("-")) + "- " + albumAdi + ".jpg" : null;
+									resimDosya = resimDosyaAdi != null ? new File(resimDosyaAdi) : null;
+									dosyaVar = resimDosya != null && resimDosya.exists();
+									if (dosyaVar == false && albumAdi != null) {
+										resimDosya = null;
+										String searchQuery = (sanatci + " " + sarkiAdi).trim();
+										try {
+											String coverUrl = fetchCoverUrlFromItunes(searchQuery, albumAdi);
+											if (coverUrl != null)
+												downloadImage(coverUrl, resimDosyaAdi);
+											resimDosya =  new File(resimDosyaAdi);
+										} catch (Exception e1) {
+										}
+									}
 								}
 							}
-							if (fieldGuncelleMap.isEmpty() == false || list != null) {
+							if (resimDosya != null && resimDosya.exists() == false)
+								resimDosya = null;
+							if (fieldGuncelleMap.isEmpty() == false || list != null || (resimDosya != null && dosyaVar == false)) {
 								String str = oldStr + " --> ", enter = "";
+
 								if (contentLRC != null) {
 									String fileName = oldStr.substring(0, oldStr.lastIndexOf(".")) + ".lrc";
 									File sozDosyasi = new File(fileName);
@@ -781,7 +890,10 @@ public class M3UListApp {
 									// enter = "\n";
 									// str += enter + sozDosyasi.getName() + " şarkı sözü dosyası oluşturuldu.";
 								}
-
+								if (resimDosya != null && dosyaVar == false) {
+									str += enter + resimDosya.getName() + " resimi yazıldı.";
+									enter = "\n";
+								}
 								for (Iterator iterator = fieldGuncelleMap.keySet().iterator(); iterator.hasNext();) {
 									FieldKey fieldKey = (FieldKey) iterator.next();
 									String deger = fieldGuncelleMap.get(fieldKey);
@@ -820,10 +932,10 @@ public class M3UListApp {
 					} catch (Exception e2) {
 						sb.append(e2 + "\n");
 					}
-					Mp3File mp3file = null;
+
 					if (audioFile == null) {
 						try {
-							mp3file = new Mp3File(mp3File.getAbsolutePath(), 8192, false);
+
 							if (mp3file.hasId3v2Tag()) {
 								ID3v2 id3v2Tag = mp3file.getId3v2Tag();
 								String lyrics = id3v2Tag.getLyrics() != null ? id3v2Tag.getLyrics().trim() : "";
@@ -859,8 +971,12 @@ public class M3UListApp {
 								}
 								if (sarkiAdi.equals("") == false) {
 									String album = id3v2Tag.getAlbum() != null ? id3v2Tag.getAlbum().trim() : "";
-									if (album.trim().equals(""))
+									if (album.trim().equals("")) {
 										fieldGuncelleMap.put(FieldKey.ALBUM, sarkiAdi);
+										albumAdi = sarkiAdi;
+									} else
+										albumAdi = album;
+
 								}
 								if (lyrics == null || lyrics.trim().length() == 0) {
 									HashMap<FieldKey, String> sarkiMap = getSongUrl(oldStr, sanatci, sarkiAdi);
@@ -871,15 +987,37 @@ public class M3UListApp {
 											fieldGuncelleMap.put(FieldKey.LYRICS, lyrics);
 											if (sarkiMap.containsKey(FieldKey.ALBUM)) {
 												String sarkiAlbum = sarkiMap.get(FieldKey.ALBUM);
-												if (sarkiAlbum.trim().equalsIgnoreCase(albumAdi) == false)
+												if (sarkiAlbum.trim().equalsIgnoreCase(albumAdi) == false) {
+													albumAdi = sarkiAlbum.trim();
 													fieldGuncelleMap.put(FieldKey.ALBUM, sarkiAlbum.trim());
+												}
 											}
 										}
 										sarkiMap = null;
 									}
 								}
-								if (fieldGuncelleMap.isEmpty() == false) {
+								resimDosyaAdi = albumAdi != null && albumAdi.trim().length() > 0 ? oldStr.substring(0, oldStr.indexOf("-")) + "- " + albumAdi + ".jpg" : null;
+								resimDosya = resimDosyaAdi != null ? new File(resimDosyaAdi) : null;
+								dosyaVar = resimDosya != null && resimDosya.exists();
+								if (dosyaVar == false && albumAdi != null) {
+									resimDosya = null;
+									String searchQuery = (sanatci + " " + sarkiAdi).trim();
+									try {
+										String coverUrl = fetchCoverUrlFromItunes(searchQuery, albumAdi);
+										if (coverUrl != null)
+											downloadImage(coverUrl, resimDosyaAdi);
+										resimDosya =  new File(resimDosyaAdi);
+									} catch (Exception e1) {
+									}
+								}
+								if (resimDosya != null && resimDosya.exists() == false)
+									resimDosya = null;
+								if (fieldGuncelleMap.isEmpty() == false || (resimDosya != null && dosyaVar == false)) {
 									String str = oldStr + " --> ", enter = "";
+									if (resimDosya != null && dosyaVar == false) {
+										enter = "\n";
+										str += enter + resimDosya.getName() + " resimi yazıldı.";
+									}
 									for (Iterator iterator = fieldGuncelleMap.keySet().iterator(); iterator.hasNext();) {
 										FieldKey fieldKey = (FieldKey) iterator.next();
 										String deger = fieldGuncelleMap.get(fieldKey);
