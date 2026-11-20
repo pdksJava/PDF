@@ -888,6 +888,7 @@ public class M3UListApp {
 									tag.setField(artwork);
 									audioFile.commit();
 									list.add(artwork);
+									dosyaVar = false;
 								}
 							}
 
