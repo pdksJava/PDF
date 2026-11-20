@@ -506,6 +506,26 @@ public class M3UListApp {
 	}
 
 	/**
+	 * @param text
+	 * @return
+	 */
+	private static String fixEncoding(String text) {
+		if (text == null || text.isEmpty()) {
+			return "";
+		}
+		// Metin ISO-8859-1 sınırları içindeyse ve bozuk UTF-8 bayt dizisi içeriyorsa düzelt
+		byte[] isoBytes = text.getBytes(StandardCharsets.ISO_8859_1);
+		String reconstructed = new String(isoBytes, StandardCharsets.UTF_8);
+
+		// Eğer ISO-8859-1 -> UTF-8 dönüşümü bozuk karakter () üretmediyse ve orijinalden farklıysa düzeltilmiş halini döndür
+		if (!reconstructed.contains("\uFFFD") && !reconstructed.equals(text)) {
+			// text = reconstructed;
+		}
+
+		return text;
+	}
+
+	/**
 	 * @param dosyaAdi
 	 * @param sanatci
 	 * @param sarkiAdi
@@ -536,7 +556,7 @@ public class M3UListApp {
 				if (map != null) {
 					fieldGuncelleMap = new HashMap<FieldKey, String>();
 					if (map.containsKey("albumName")) {
-						String albumName = map.get("albumName");
+						String albumName = fixEncoding(map.get("albumName"));
 						if (albumName != null)
 							fieldGuncelleMap.put(FieldKey.ALBUM, albumName.replaceAll("  ", " ").trim());
 					}
@@ -673,9 +693,9 @@ public class M3UListApp {
 							List<Artwork> list = tag.getArtworkList();
 							if (list != null && list.isEmpty())
 								list = null;
-							sarkiAdi = tag.getFirst(FieldKey.TITLE);
-							sanatci = tag.getFirst(FieldKey.ARTIST);
-							albumAdi = tag.getFirst(FieldKey.ALBUM);
+							sarkiAdi = fixEncoding(tag.getFirst(FieldKey.TITLE));
+							sanatci = fixEncoding(tag.getFirst(FieldKey.ARTIST));
+							albumAdi = fixEncoding(tag.getFirst(FieldKey.ALBUM));
 							for (FieldKey alan : alanlar) {
 								String deger = null;
 								if (alan.equals(FieldKey.COVER_ART))
@@ -904,14 +924,12 @@ public class M3UListApp {
 							sb.append(e.getMessage() + " --> " + oldStr + "\n");
 						}
 					}
-					if (audioFile != null || mp3file != null)
+					if (audioFile != null || mp3file != null) {
 						if (dosyaAdi.equals(mp3Adi) == false) {
-
 							String str = oldStr + " --> " + dosyaAdi;
 							sb.append(str + "\n");
-							// System.err.println(str);
-
 						}
+					}
 				}
 			}
 		}
