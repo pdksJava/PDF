@@ -785,6 +785,7 @@ public class M3UListApp {
 							sarkiAdi = fixEncoding(tag.getFirst(FieldKey.TITLE));
 							sanatci = fixEncoding(tag.getFirst(FieldKey.ARTIST));
 							albumAdi = fixEncoding(tag.getFirst(FieldKey.ALBUM));
+
 							for (FieldKey alan : alanlar) {
 								String deger = null;
 								if (alan.equals(FieldKey.COVER_ART))
@@ -862,6 +863,7 @@ public class M3UListApp {
 									resimDosyaAdi = albumAdi != null && albumAdi.trim().length() > 0 ? oldStr.substring(0, oldStr.indexOf("-")) + "- " + albumAdi + ".jpg" : null;
 									resimDosya = resimDosyaAdi != null ? new File(resimDosyaAdi) : null;
 									dosyaVar = resimDosya != null && resimDosya.exists();
+
 									if (dosyaVar == false && albumAdi != null) {
 										resimDosya = null;
 										String searchQuery = (sanatci + " " + sarkiAdi).trim();
@@ -869,14 +871,26 @@ public class M3UListApp {
 											String coverUrl = fetchCoverUrlFromItunes(searchQuery, albumAdi);
 											if (coverUrl != null)
 												downloadImage(coverUrl, resimDosyaAdi);
-											resimDosya =  new File(resimDosyaAdi);
+											resimDosya = new File(resimDosyaAdi);
 										} catch (Exception e1) {
 										}
 									}
 								}
 							}
-							if (resimDosya != null && resimDosya.exists() == false)
-								resimDosya = null;
+							if (resimDosya != null) {
+								if (resimDosya.exists() == false)
+									resimDosya = null;
+								else if (list == null) {
+									list = new ArrayList<Artwork>();
+									Artwork artwork = Artwork.createArtworkFromFile(resimDosya);
+									artwork.setDescription(resimDosya.getName()); // Dosya adını açıklama alanına kaydeder
+									tag.deleteArtworkField();
+									tag.setField(artwork);
+									audioFile.commit();
+									list.add(artwork);
+								}
+							}
+
 							if (fieldGuncelleMap.isEmpty() == false || list != null || (resimDosya != null && dosyaVar == false)) {
 								String str = oldStr + " --> ", enter = "";
 
@@ -918,7 +932,7 @@ public class M3UListApp {
 									} else
 										str += enter + "Şarkı sözü" + (contentLRC != null ? " dosyası" : "") + " yazıldı.";
 								}
-								if (list != null)
+								if (resimDosya == null && list != null)
 									tag.deleteArtworkField();
 								audioFile.commit();
 								System.out.println(str);
@@ -1006,7 +1020,7 @@ public class M3UListApp {
 										String coverUrl = fetchCoverUrlFromItunes(searchQuery, albumAdi);
 										if (coverUrl != null)
 											downloadImage(coverUrl, resimDosyaAdi);
-										resimDosya =  new File(resimDosyaAdi);
+										resimDosya = new File(resimDosyaAdi);
 									} catch (Exception e1) {
 									}
 								}
