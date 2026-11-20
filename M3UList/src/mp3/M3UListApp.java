@@ -754,6 +754,15 @@ public class M3UListApp {
 					} catch (Exception e) {
 						audioFile = null;
 					}
+					ID3v2 id3v2Tag = null;
+					Mp3File mp3file = null;
+					try {
+						mp3file = new Mp3File(mp3File.getAbsolutePath(), 8192, false);
+						if (mp3file.hasId3v2Tag())
+							id3v2Tag = mp3file.getId3v2Tag();
+					} catch (Exception e) {
+						// TODO: handle exception
+					}
 					try {
 						if (audioFile == null) {
 							String newStr = oldStr.substring(0, oldStr.lastIndexOf(".")) + "_new.mp3";
@@ -770,12 +779,7 @@ public class M3UListApp {
 						}
 					} catch (Exception e) {
 					}
-					Mp3File mp3file = null;
-					try {
-						mp3file = new Mp3File(mp3File.getAbsolutePath(), 8192, false);
-					} catch (Exception e) {
-						// TODO: handle exception
-					}
+
 					try {
 						Tag tag = audioFile != null ? audioFile.getTag() : null;
 						if (tag != null) {
@@ -880,7 +884,7 @@ public class M3UListApp {
 							if (resimDosya != null) {
 								if (resimDosya.exists() == false)
 									resimDosya = null;
-								else if (list == null) {
+								else if (list == null && (id3v2Tag == null || id3v2Tag.getAlbumImage() == null)) {
 									list = new ArrayList<Artwork>();
 									Artwork artwork = Artwork.createArtworkFromFile(resimDosya);
 									artwork.setDescription(resimDosya.getName()); // Dosya adını açıklama alanına kaydeder
@@ -892,7 +896,7 @@ public class M3UListApp {
 								}
 							}
 
-							if (fieldGuncelleMap.isEmpty() == false || list != null || (resimDosya != null && dosyaVar == false)) {
+							if (fieldGuncelleMap.isEmpty() == false || ((list != null || resimDosya != null) && dosyaVar == false)) {
 								String str = oldStr + " --> ", enter = "";
 
 								if (contentLRC != null) {
@@ -951,8 +955,7 @@ public class M3UListApp {
 					if (audioFile == null) {
 						try {
 
-							if (mp3file.hasId3v2Tag()) {
-								ID3v2 id3v2Tag = mp3file.getId3v2Tag();
+							if (id3v2Tag != null) {
 								String lyrics = id3v2Tag.getLyrics() != null ? id3v2Tag.getLyrics().trim() : "";
 								sanatci = id3v2Tag.getArtist() != null ? id3v2Tag.getArtist().trim() : "";
 								sarkiAdi = id3v2Tag.getTitle() != null ? id3v2Tag.getTitle().trim() : "";
